@@ -1,0 +1,17 @@
+// install diesel_cli
+cargo install diesel_cli --no-default-features --features postgres
+
+// setup diesel
+diesel setup
+
+// create migration
+diesel migration generate create_initial_tables
+
+// run migration
+diesel migration run
+
+// create new schema
+diesel print-schema > src/schema.rs
+
+// reset migration
+diesel database reset

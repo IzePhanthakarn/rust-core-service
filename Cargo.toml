@@ -1,0 +1,36 @@
+[package]
+name = "rust-core-service"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Web Framework
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Database & ORM
+diesel = { version = "2.1", features = ["postgres", "uuid", "chrono", "r2d2"] }
+dotenvy = "0.15"
+
+# Serialization & Deserialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Auth & Security
+jsonwebtoken = "9.3"
+argon2 = "0.5" # สำหรับ Hash รหัสผ่าน
+
+# Utils & Types
+uuid = { version = "1.8", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# API Documentation (Swagger/Scalar)
+utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
+utoipa-scalar = { version = "0.2", features = ["axum"] }
+
+diesel-derive-enum = { version = "2.1", features = ["postgres"] }
+validator = { version = "0.18", features = ["derive"] }
+rand_core = { version = "0.6", features = ["std"] }
