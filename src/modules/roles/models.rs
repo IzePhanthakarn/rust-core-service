@@ -11,6 +11,7 @@ use crate::schema::{roles, user_roles};
 pub struct Role {
     pub id: Uuid,
     pub name: String,
+    pub description: Option<String>,
 }
 
 #[derive(Insertable)]
@@ -19,4 +20,11 @@ pub struct NewUserRole {
     pub user_id: Uuid,
     pub role_id: Uuid,
     pub assigned_by: Option<Uuid>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = roles)]
+pub struct NewRole {
+    pub name: String,
+    pub description: Option<String>,
 }

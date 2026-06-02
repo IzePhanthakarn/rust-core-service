@@ -1,6 +1,7 @@
 use diesel::PgConnection;
 use uuid::Uuid;
 use crate::core::errors::AppError;
+use crate::modules::roles::models::Role;
 use crate::modules::roles::repositories::RoleRepository;
 use crate::modules::users::repositories::UserRepository;
 
@@ -25,5 +26,27 @@ impl RoleService {
         let _ = UserRepository::increment_token_version(conn, target_user_id);
 
         Ok(())
+    }
+
+    pub fn create_role(
+        conn: &mut PgConnection, 
+        name: &str, 
+        description: Option<String>
+    ) -> Result<Role, AppError> {
+        
+        let normalized_name = name.trim().to_lowercase();
+
+        let existing_role = RoleRepository::find_by_name(conn, &normalized_name)
+            .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
+
+        if existing_role.is_some() {
+            return Err(AppError::Conflict(format!("มีชื่อ Role '{}' อยู่ในระบบแล้ว", normalized_name)));
+        }
+
+        // โยน description ต่อให้ Repository
+        let new_role = RoleRepository::create_role(conn, &normalized_name, description)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Role ใหม่ได้".to_string()))?;
+
+        Ok(new_role)
     }
 }

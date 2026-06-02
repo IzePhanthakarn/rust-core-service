@@ -4,19 +4,17 @@ use axum::{
 };
 
 use crate::{
-    core::{
+    AppState, core::{
         errors::AppError,
         extractors::ValidatedJson,
         jwt::Claims,
         response::{ApiResponse, EmptyData},
-    },
-    modules::roles::{
-        dtos::{AssignRoleRequest, RevokeRoleRequest},
+    }, modules::roles::{
+        dtos::{AssignRoleRequest, CreateRoleRequest, RevokeRoleRequest},
         models::Role,
         repositories::RoleRepository,
         services::RoleService,
-    },
-    AppState,
+    }
 };
 
 #[utoipa::path(
@@ -155,4 +153,40 @@ pub async fn revoke_role(
         200,
         "ถอดสิทธิ์ผู้ใช้งานสำเร็จ",
     )))
+}
+
+#[utoipa::path(
+    post,
+    path = "/roles",
+    tag = "Roles",
+    request_body = CreateRoleRequest,
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 201, description = "สร้าง Role สำเร็จ", body = ApiResponse<Role>),
+        (status = 400, description = "ข้อมูลผิดพลาด", body = ApiResponse<EmptyData>),
+        (status = 403, description = "สิทธิ์ไม่เพียงพอ", body = ApiResponse<EmptyData>),
+        (status = 409, description = "มี Role นี้อยู่แล้ว", body = ApiResponse<EmptyData>)
+    )
+)]
+pub async fn create_role(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    ValidatedJson(payload): ValidatedJson<CreateRoleRequest>,
+) -> Result<Json<ApiResponse<Role>>, AppError> {
+    
+    // ล็อกสิทธิ์เฉพาะ super_admin
+    let is_super_admin = claims.roles.contains(&"super_admin".to_string());
+    if !is_super_admin {
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Role ใหม่ (ต้องการสิทธิ์ super_admin)".to_string()));
+    }
+
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    // แกะเอา payload.description ส่งเข้าไปด้วย
+    let new_role = RoleService::create_role(&mut conn, &payload.name, payload.description)?;
+
+    Ok(Json(ApiResponse::success(201, "สร้าง Role ใหม่สำเร็จ", new_role)))
 }

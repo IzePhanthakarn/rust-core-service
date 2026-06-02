@@ -42,6 +42,7 @@ pub struct AppState {
 
         // Roles Routes (ย้ายมาเรียกผ่าน module roles)
         modules::roles::handlers::get_roles,
+        modules::roles::handlers::create_role,
         modules::roles::handlers::assign_role,
         modules::roles::handlers::revoke_role,
     ),
@@ -84,6 +85,7 @@ pub struct AppState {
         // ================================
         
         // ==== Roles ====
+        modules::roles::dtos::CreateRoleRequest,
         modules::roles::dtos::AssignRoleRequest,
         modules::roles::dtos::RevokeRoleRequest,
         modules::roles::models::Role,

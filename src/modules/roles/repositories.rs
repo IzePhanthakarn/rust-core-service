@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use uuid::Uuid;
 use crate::schema::{roles, user_roles};
-use crate::modules::roles::models::{Role, NewUserRole};
+use crate::modules::roles::models::{NewRole, NewUserRole, Role};
 
 pub struct RoleRepository;
 
@@ -45,5 +45,30 @@ impl RoleRepository {
                 .filter(user_roles::role_id.eq(role_id_to_revoke)),
         )
         .execute(conn)
+    }
+
+    pub fn find_by_name(conn: &mut PgConnection, name: &str) -> QueryResult<Option<Role>> {
+        roles::table
+            .filter(roles::name.eq(name))
+            .select(Role::as_select())
+            .first::<Role>(conn)
+            .optional()
+    }
+
+    pub fn create_role(
+        conn: &mut PgConnection, 
+        name: &str, 
+        description: Option<String>
+    ) -> QueryResult<Role> {
+        
+        let new_role = NewRole { 
+            name: name.to_string(),
+            description,
+        };
+
+        diesel::insert_into(roles::table)
+            .values(&new_role)
+            .returning(Role::as_returning()) 
+            .get_result(conn)
     }
 }
