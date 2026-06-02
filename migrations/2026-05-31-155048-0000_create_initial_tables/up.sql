@@ -57,3 +57,7 @@ CREATE TABLE user_roles (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, role_id)
 );
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_deleted_at ON users(deleted_at);
