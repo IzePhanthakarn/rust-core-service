@@ -61,3 +61,12 @@ pub struct ResetPasswordRequest {
     #[validate(length(min = 6, message = "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"))]
     pub new_password: String,
 }
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct ChangePasswordRequest {
+    #[validate(length(min = 1, message = "กรุณากรอกรหัสผ่านเดิม"))]
+    pub old_password: String,
+    
+    #[validate(length(min = 6, message = "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"))]
+    pub new_password: String,
+}

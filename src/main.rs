@@ -29,14 +29,20 @@ pub struct AppState {
         modules::auth::handlers::register,
         modules::auth::handlers::login,
         modules::auth::handlers::refresh_token,
+        modules::auth::handlers::change_password,
         modules::auth::handlers::reset_password,
         modules::auth::handlers::logout,
 
         // User Routes
         modules::users::handlers::get_users,
-        modules::users::handlers::assign_role,
-        modules::users::handlers::get_me,
         modules::users::handlers::update_me,
+        modules::users::handlers::get_me,
+        modules::users::handlers::update_user_status,
+        modules::users::handlers::delete_user_by_id,
+        modules::users::handlers::get_roles,
+        modules::users::handlers::assign_role,
+        modules::users::handlers::revoke_role,
+        modules::users::handlers::get_user_by_id,
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -56,19 +62,29 @@ pub struct AppState {
         modules::auth::dtos::LoginRequest,
         modules::auth::dtos::AuthResponse,
         modules::auth::dtos::RefreshRequest,
+        modules::auth::dtos::ChangePasswordRequest,
         modules::auth::dtos::ResetPasswordRequest,
         // ================================
 
         // ==== Users ====
         modules::users::models::User,
         modules::users::models::UserStatus,
-        core::response::PaginatedData<modules::users::models::User>,
-        core::response::ApiResponse<core::response::PaginatedData<modules::users::models::User>>,
-        modules::users::models::AssignRoleRequest,
         modules::users::models::UserProfile,
         modules::users::models::MeResponse,
         modules::users::models::UpdateProfileRequest,
+        modules::users::models::UpdateUserStatusRequest,
+        modules::users::models::UserDetailResponse,
+        core::response::PaginatedData<modules::users::models::User>,
+        core::response::ApiResponse<core::response::PaginatedData<modules::users::models::User>>,
         core::response::ApiResponse<modules::users::models::MeResponse>,
+        core::response::ApiResponse<modules::users::models::UserDetailResponse>,
+        // ================================
+        
+        // ==== Roles ====
+        modules::users::models::AssignRoleRequest,
+        modules::users::models::RevokeRoleRequest,
+        modules::users::models::Role,
+        core::response::ApiResponse<Vec<modules::users::models::Role>>,
         // ================================
     )),
     tags(

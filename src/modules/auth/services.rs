@@ -1,7 +1,7 @@
 use crate::core::jwt::{generate_tokens, verify_refresh_token};
 use crate::core::security::verify_password;
 use crate::core::{errors::AppError, security::hash_password};
-use crate::modules::auth::dtos::{AuthResponse, LoginRequest, RefreshRequest, ResetPasswordRequest};
+use crate::modules::auth::dtos::{AuthResponse, ChangePasswordRequest, LoginRequest, RefreshRequest, ResetPasswordRequest};
 use crate::modules::users::models::UserStatus;
 use crate::modules::{
     auth::dtos::RegisterRequest,
@@ -64,6 +64,7 @@ impl AuthService {
         match user.status {
             UserStatus::Suspended => return Err(AppError::BadRequest("บัญชีนี้ถูกระงับการใช้งานชั่วคราว".to_string())),
             UserStatus::Banned => return Err(AppError::BadRequest("บัญชีนี้ถูกแบนถาวร".to_string())),
+            UserStatus::Inactive => return Err(AppError::BadRequest("บัญชีนี้ถูกลบแล้ว".to_string())),
             UserStatus::Active => {} // ผ่านได้
         }
 
@@ -169,6 +170,35 @@ impl AuthService {
 
     pub fn logout(conn: &mut PgConnection, user_id: Uuid) -> Result<(), AppError> {
         UserRepository::increment_token_version(conn, user_id)?;
+        Ok(())
+    }
+
+    pub fn change_password(conn: &mut PgConnection, user_id: Uuid, req: ChangePasswordRequest) -> Result<(), AppError> {
+        
+        // 1. ดึงข้อมูล User ขึ้นมา
+        let user = users::table
+            .filter(users::id.eq(user_id))
+            .first::<crate::modules::users::models::User>(conn)
+            .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งานในระบบ".to_string()))?;
+
+        // 2. ตรวจสอบรหัสผ่านเดิม (แยก Error ชัดเจน)
+        let stored_password_hash = user.password_hash.as_deref().unwrap_or("");
+        if !verify_password(stored_password_hash, &req.old_password) {
+            return Err(AppError::BadRequest("รหัสผ่านเดิมไม่ถูกต้อง".to_string()));
+        }
+
+        // 3. ป้องกันการใช้รหัสผ่านใหม่ซ้ำกับรหัสผ่านเดิม (UX & Security)
+        if verify_password(stored_password_hash, &req.new_password) {
+            return Err(AppError::BadRequest("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม".to_string()));
+        }
+
+        // 4. แฮชรหัสผ่านใหม่
+        let hashed_new_password = hash_password(&req.new_password)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถเข้ารหัสผ่านใหม่ได้".to_string()))?;
+
+        // 5. อัปเดตลง Database (ใช้ฟังก์ชันเดิมที่มีอยู่แล้ว)
+        UserRepository::update_password(conn, user.id, &hashed_new_password)?;
+
         Ok(())
     }
 

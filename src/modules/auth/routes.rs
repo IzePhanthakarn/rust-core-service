@@ -1,10 +1,14 @@
-use axum::{middleware, routing::post, Router};
-use crate::{core::middleware::auth_guard, AppState};
 use super::handlers;
+use crate::{AppState, core::middleware::auth_guard};
+use axum::{
+    Router, middleware,
+    routing::{post, put},
+};
 
 pub fn auth_routes() -> Router<AppState> {
     // 1. กลุ่มที่ "ต้องใช้ Token" ในการเข้าถึง
     let protected_routes = Router::new()
+        .route("/change-password", put(handlers::change_password))
         .route("/logout", post(handlers::logout))
         .route_layer(middleware::from_fn(auth_guard)); // สวมยามให้กลุ่มนี้
 
@@ -16,7 +20,5 @@ pub fn auth_routes() -> Router<AppState> {
         .route("/reset-password", post(handlers::reset_password));
 
     // 3. จับรวมกัน
-    Router::new()
-        .merge(public_routes)
-        .merge(protected_routes)
+    Router::new().merge(public_routes).merge(protected_routes)
 }

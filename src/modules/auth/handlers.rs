@@ -3,15 +3,11 @@ use axum::{Json, extract::{State, Extension}, http::StatusCode};
 use crate::{
     AppState,
     core::{
-        errors::AppError,
-        extractors::ValidatedJson,
-        response::{ApiResponse, EmptyData},
-        jwt::Claims
+        errors::AppError, extractors::ValidatedJson, jwt::Claims, response::{ApiResponse, EmptyData}
     },
     modules::auth::{
         dtos::{
-            AuthResponse, LoginRequest, RefreshRequest, RegisterRequest, RegisterResponse,
-            ResetPasswordRequest,
+            AuthResponse, ChangePasswordRequest, LoginRequest, RefreshRequest, RegisterRequest, RegisterResponse, ResetPasswordRequest
         },
         services::AuthService,
     },
@@ -157,4 +153,30 @@ pub async fn logout(
         200,
         "ออกจากระบบทุกอุปกรณ์สำเร็จ",
     )))
+}
+
+#[utoipa::path(
+    put, // ใช้ PUT เพราะเป็นการอัปเดตข้อมูล
+    path = "/auth/change-password",
+    tag = "Auth",
+    request_body = ChangePasswordRequest,
+    security(("bearerAuth" = [])), // บังคับว่าต้องมี Token
+    responses(
+        (status = 200, description = "เปลี่ยนรหัสผ่านสำเร็จ", body = ApiResponse<EmptyData>),
+        (status = 400, description = "รหัสผ่านเดิมไม่ถูกต้อง", body = ApiResponse<EmptyData>),
+        (status = 401, description = "ยังไม่ได้เข้าสู่ระบบ", body = ApiResponse<EmptyData>)
+    )
+)]
+pub async fn change_password(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    ValidatedJson(payload): ValidatedJson<ChangePasswordRequest>,
+) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
+    
+    let mut conn = state.db_pool.get().map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    // ส่ง User ID (claims.sub) เข้าไปพร้อมกับ Payload
+    AuthService::change_password(&mut conn, claims.sub, payload)?;
+
+    Ok(Json(ApiResponse::success_without_data(200, "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านใหม่")))
 }

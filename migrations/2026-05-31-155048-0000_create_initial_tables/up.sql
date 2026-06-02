@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- สร้าง Custom Types (Enums)
-CREATE TYPE user_status AS ENUM ('active', 'suspended', 'banned');
+CREATE TYPE user_status AS ENUM ('active', 'suspended', 'banned', 'inactive');
 CREATE TYPE user_provider AS ENUM ('google', 'facebook', 'discord', 'line');
 
 -- 1. Table: users
