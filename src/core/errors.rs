@@ -5,24 +5,32 @@ use axum::{
 };
 use crate::core::response::{ApiResponse, EmptyData};
 
-// กำหนดประเภทของ Error ที่อาจเกิดขึ้นในระบบ
 pub enum AppError {
     BadRequest(String),
+    Unauthorized(String),
+    Forbidden(String),
     Conflict(String),
     InternalServerError(String),
 }
 
-// แปลง AppError ให้กลายเป็น HTTP Response ของ Axum โดยอัตโนมัติ
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
             AppError::InternalServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
 
-        // ใช้ ApiResponse::error ห่อข้อความอีกที
-        let body = Json(ApiResponse::<EmptyData>::error(status.as_u16(), &message));
+        // ==== ปรับ Logic การเลือก Status ====
+        // .is_client_error() จะเป็น true ถ้าเป็นเลข 400-499
+        let body = if status.is_client_error() {
+            Json(ApiResponse::<EmptyData>::fail(status.as_u16(), &message))
+        } else {
+            Json(ApiResponse::<EmptyData>::error(status.as_u16(), &message))
+        };
+        // ===================================
         
         (status, body).into_response()
     }

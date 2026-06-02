@@ -43,3 +43,21 @@ pub struct AuthResponse {
 pub struct RegisterResponse {
     pub message: String,
 }
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct RefreshRequest {
+    #[validate(length(min = 1, message = "กรุณาส่ง Refresh Token"))]
+    pub refresh_token: String,
+}
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct ResetPasswordRequest {
+    #[validate(email(message = "รูปแบบอีเมลไม่ถูกต้อง"))]
+    pub email: String,
+    
+    #[validate(length(min = 1, message = "กรุณากรอกคำลับเพื่อการกู้คืนรหัสผ่าน"))]
+    pub secret_word: String,
+    
+    #[validate(length(min = 6, message = "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"))]
+    pub new_password: String,
+}

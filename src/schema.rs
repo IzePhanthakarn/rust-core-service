@@ -41,9 +41,9 @@ diesel::table! {
         id -> Uuid,
         user_id -> Uuid,
         #[max_length = 255]
-        first_name -> Nullable<Varchar>,
+        first_name -> Varchar,
         #[max_length = 255]
-        last_name -> Nullable<Varchar>,
+        last_name -> Varchar,
         #[max_length = 255]
         avatar_url -> Nullable<Varchar>,
         bio -> Nullable<Text>,
