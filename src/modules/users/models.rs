@@ -128,5 +128,6 @@ pub struct UserFilterQuery {
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct RevokeRoleRequest {
     pub target_user_id: Uuid,
+    
     pub role_id: Uuid,
 }

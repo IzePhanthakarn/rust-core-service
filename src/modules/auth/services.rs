@@ -2,15 +2,14 @@ use crate::core::jwt::{generate_tokens, verify_refresh_token};
 use crate::core::security::verify_password;
 use crate::core::{errors::AppError, security::hash_password};
 use crate::modules::auth::dtos::{AuthResponse, ChangePasswordRequest, LoginRequest, RefreshRequest, ResetPasswordRequest};
+use crate::modules::auth::repositories::AuthRepository;
 use crate::modules::users::models::UserStatus;
 use crate::modules::{
     auth::dtos::RegisterRequest,
     users::{models::NewUser, repositories::UserRepository},
 };
 use diesel::PgConnection;
-use diesel::prelude::*;
 use uuid::Uuid;
-use crate::schema::users;
 
 pub struct AuthService;
 
@@ -36,7 +35,7 @@ impl AuthService {
         let new_user = NewUser {
             email: req.email,
             password_hash: hashed_password,
-            secret_word: Some(hashed_secret_word), // ใส่คำลับที่ผ่านการ Hash แล้วลงไป
+            secret_word: Some(hashed_secret_word), 
         };
 
         // 5. บันทึกลง 3 ตารางรวดเดียวผ่าน Repository
@@ -48,24 +47,21 @@ impl AuthService {
         )
         .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
-        // 6. คืนค่าข้อความสำเร็จ
         Ok(())
     }
 
     pub fn login(conn: &mut PgConnection, req: LoginRequest) -> Result<AuthResponse, AppError> {
-        
         // 1. ค้นหา User จากอีเมล
         let user = UserRepository::find_by_email(conn, &req.email)
             .map_err(|_| AppError::InternalServerError("เกิดข้อผิดพลาดที่ระบบฐานข้อมูล".to_string()))?
             .ok_or_else(|| AppError::BadRequest("อีเมลหรือรหัสผ่านไม่ถูกต้อง".to_string()))?; 
-            // ^ Security Tip: เราจะไม่บอกตรงๆ ว่า "ไม่พบอีเมล" เพื่อป้องกันคนสุ่มหาอีเมลในระบบ
 
         // 2. เช็คสถานะ (ป้องกัน User ที่โดนแบนเข้าสู่ระบบ)
         match user.status {
             UserStatus::Suspended => return Err(AppError::BadRequest("บัญชีนี้ถูกระงับการใช้งานชั่วคราว".to_string())),
             UserStatus::Banned => return Err(AppError::BadRequest("บัญชีนี้ถูกแบนถาวร".to_string())),
             UserStatus::Inactive => return Err(AppError::BadRequest("บัญชีนี้ถูกลบแล้ว".to_string())),
-            UserStatus::Active => {} // ผ่านได้
+            UserStatus::Active => {} 
         }
 
         // 3. ตรวจสอบรหัสผ่าน
@@ -86,12 +82,11 @@ impl AuthService {
         let (access_token, refresh_token) = generate_tokens(user.id, user.token_version, roles)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Token ได้".to_string()))?;
 
-        // 6. คืนค่า AuthResponse 
         Ok(AuthResponse {
             access_token,
             refresh_token,
             token_type: "Bearer".to_string(),
-            expires_in: 900, // 15 นาที = 900 วินาที
+            expires_in: 900, // 15 นาที
         })
     }
     
@@ -105,29 +100,27 @@ impl AuthService {
             return Err(AppError::Unauthorized("กรุณาใช้ Refresh Token เท่านั้น".to_string()));
         }
 
-        // 3. ดึงข้อมูล User จาก Database
-        let user = users::table
-            .filter(users::id.eq(claims.sub))
-            .first::<crate::modules::users::models::User>(conn)
+        // 3. ดึงข้อมูล User ผ่าน AuthRepository (คลีนแล้ว ไม่ต้อง Query เอง!)
+        let user = AuthRepository::find_user_by_id(conn, claims.sub)
             .map_err(|_| AppError::Unauthorized("ไม่พบผู้ใช้งานในระบบ".to_string()))?;
 
         // 4. ตรวจสอบสถานะ User
         match user.status {
-            crate::modules::users::models::UserStatus::Suspended => return Err(AppError::Forbidden("บัญชีนี้ถูกระงับการใช้งาน".to_string())),
-            crate::modules::users::models::UserStatus::Banned => return Err(AppError::Forbidden("บัญชีนี้ถูกแบนถาวร".to_string())),
+            UserStatus::Suspended => return Err(AppError::Forbidden("บัญชีนี้ถูกระงับการใช้งาน".to_string())),
+            UserStatus::Banned => return Err(AppError::Forbidden("บัญชีนี้ถูกแบนถาวร".to_string())),
             _ => {}
         }
 
-        // 5. ตรวจสอบ Token Version (ป้องกัน Token ที่ถูก Force Logout)
+        // 5. ตรวจสอบ Token Version
         if user.token_version != claims.token_version {
             return Err(AppError::Unauthorized("Token นี้ถูกยกเลิกการใช้งานแล้ว".to_string()));
         }
 
-        // 6. ดึง Roles ใหม่ล่าสุดจาก DB (เผื่อมีการเพิ่ม/ลดสิทธิ์ระหว่างที่ Token ใบเก่าทำงานอยู่)
+        // 6. ดึง Roles ใหม่ล่าสุดจาก DB
         let roles = UserRepository::get_user_roles(conn, user.id)
             .unwrap_or_default();
 
-        // 7. ออก Token คู่ใหม่ให้
+        // 7. ออก Token คู่ใหม่
         let (access_token, refresh_token) = generate_tokens(user.id, user.token_version, roles)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Token ได้".to_string()))?;
 
@@ -135,34 +128,28 @@ impl AuthService {
             access_token,
             refresh_token,
             token_type: "Bearer".to_string(),
-            expires_in: 900, // 15 นาที
+            expires_in: 900,
         })
     }
 
     pub fn reset_password(conn: &mut PgConnection, req: ResetPasswordRequest) -> Result<(), AppError> {
-        // 1. ค้นหา User จากอีเมล
         let user_result = UserRepository::find_by_email(conn, &req.email)
             .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
 
-        // 2. เช็คว่าเจออีเมลไหม (ถ้าไม่เจอ ดีดกลับทันที)
         let user = match user_result {
             Some(u) => u,
             None => return Err(AppError::BadRequest("ไม่พบอีเมลนี้ในระบบ".to_string())),
         };
 
-        // 3. ดึง Hash ของคำลับออกมา
         let stored_secret_word = user.secret_word.as_deref().unwrap_or("");
 
-        // 4. ตรวจสอบคำลับ (ถ้ามาถึงตรงนี้แปลว่าอีเมลถูกแล้ว เช็คแค่คำลับ)
         if !verify_password(stored_secret_word, &req.secret_word) {
             return Err(AppError::BadRequest("คำลับไม่ถูกต้อง".to_string()));
         }
 
-        // 5. แฮชรหัสผ่านใหม่
         let hashed_new_password = hash_password(&req.new_password)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถเข้ารหัสผ่านใหม่ได้".to_string()))?;
 
-        // 6. อัปเดตลง Database
         UserRepository::update_password(conn, user.id, &hashed_new_password)?;
 
         Ok(())
@@ -174,20 +161,17 @@ impl AuthService {
     }
 
     pub fn change_password(conn: &mut PgConnection, user_id: Uuid, req: ChangePasswordRequest) -> Result<(), AppError> {
-        
-        // 1. ดึงข้อมูล User ขึ้นมา
-        let user = users::table
-            .filter(users::id.eq(user_id))
-            .first::<crate::modules::users::models::User>(conn)
+        // 1. ดึงข้อมูล User ผ่าน AuthRepository 
+        let user = AuthRepository::find_user_by_id(conn, user_id)
             .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งานในระบบ".to_string()))?;
 
-        // 2. ตรวจสอบรหัสผ่านเดิม (แยก Error ชัดเจน)
+        // 2. ตรวจสอบรหัสผ่านเดิม 
         let stored_password_hash = user.password_hash.as_deref().unwrap_or("");
         if !verify_password(stored_password_hash, &req.old_password) {
             return Err(AppError::BadRequest("รหัสผ่านเดิมไม่ถูกต้อง".to_string()));
         }
 
-        // 3. ป้องกันการใช้รหัสผ่านใหม่ซ้ำกับรหัสผ่านเดิม (UX & Security)
+        // 3. ป้องกันรหัสผ่านใหม่ซ้ำกับของเดิม
         if verify_password(stored_password_hash, &req.new_password) {
             return Err(AppError::BadRequest("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม".to_string()));
         }
@@ -196,11 +180,9 @@ impl AuthService {
         let hashed_new_password = hash_password(&req.new_password)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถเข้ารหัสผ่านใหม่ได้".to_string()))?;
 
-        // 5. อัปเดตลง Database (ใช้ฟังก์ชันเดิมที่มีอยู่แล้ว)
+        // 5. อัปเดตลง Database
         UserRepository::update_password(conn, user.id, &hashed_new_password)?;
 
         Ok(())
     }
-
 }
-
