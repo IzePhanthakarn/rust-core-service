@@ -4,9 +4,12 @@ use crate::core::{errors::AppError, security::hash_password};
 use crate::modules::auth::dtos::{AuthResponse, ChangePasswordRequest, LoginRequest, RefreshRequest, ResetPasswordRequest};
 use crate::modules::auth::repositories::AuthRepository;
 use crate::modules::users::models::UserStatus;
+
+// === อัปเดต Imports ใหม่ให้ดึง RoleRepository และ UserService เข้ามาด้วย ===
 use crate::modules::{
     auth::dtos::RegisterRequest,
-    users::{models::NewUser, repositories::UserRepository},
+    roles::repositories::RoleRepository, 
+    users::{models::NewUser, repositories::UserRepository, services::UserService}, 
 };
 use diesel::PgConnection;
 use uuid::Uuid;
@@ -74,8 +77,8 @@ impl AuthService {
             return Err(AppError::BadRequest("อีเมลหรือรหัสผ่านไม่ถูกต้อง".to_string()));
         }
 
-        // 4. ดึง Roles ทั้งหมดของ User
-        let roles = UserRepository::get_user_roles(conn, user.id)
+        // 4. ดึง Roles ทั้งหมดของ User (เปลี่ยนมาเรียกใช้ RoleRepository)
+        let roles = RoleRepository::get_user_roles(conn, user.id)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูลสิทธิ์การใช้งานได้".to_string()))?;
 
         // 5. ออก JWT Tokens
@@ -100,7 +103,7 @@ impl AuthService {
             return Err(AppError::Unauthorized("กรุณาใช้ Refresh Token เท่านั้น".to_string()));
         }
 
-        // 3. ดึงข้อมูล User ผ่าน AuthRepository (คลีนแล้ว ไม่ต้อง Query เอง!)
+        // 3. ดึงข้อมูล User ผ่าน AuthRepository
         let user = AuthRepository::find_user_by_id(conn, claims.sub)
             .map_err(|_| AppError::Unauthorized("ไม่พบผู้ใช้งานในระบบ".to_string()))?;
 
@@ -116,8 +119,8 @@ impl AuthService {
             return Err(AppError::Unauthorized("Token นี้ถูกยกเลิกการใช้งานแล้ว".to_string()));
         }
 
-        // 6. ดึง Roles ใหม่ล่าสุดจาก DB
-        let roles = UserRepository::get_user_roles(conn, user.id)
+        // 6. ดึง Roles ใหม่ล่าสุดจาก DB (เปลี่ยนมาเรียกใช้ RoleRepository)
+        let roles = RoleRepository::get_user_roles(conn, user.id)
             .unwrap_or_default();
 
         // 7. ออก Token คู่ใหม่
@@ -150,13 +153,15 @@ impl AuthService {
         let hashed_new_password = hash_password(&req.new_password)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถเข้ารหัสผ่านใหม่ได้".to_string()))?;
 
-        UserRepository::update_password(conn, user.id, &hashed_new_password)?;
+        // เปลี่ยนมาเรียกใช้ UserService แทน เพื่อให้มันจัดการ AppError ให้
+        UserService::update_password(conn, user.id, &hashed_new_password)?;
 
         Ok(())
     }
 
     pub fn logout(conn: &mut PgConnection, user_id: Uuid) -> Result<(), AppError> {
-        UserRepository::increment_token_version(conn, user_id)?;
+        // เปลี่ยนมาเรียกใช้ UserService แทน
+        UserService::increment_token_version(conn, user_id)?;
         Ok(())
     }
 
@@ -180,8 +185,8 @@ impl AuthService {
         let hashed_new_password = hash_password(&req.new_password)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถเข้ารหัสผ่านใหม่ได้".to_string()))?;
 
-        // 5. อัปเดตลง Database
-        UserRepository::update_password(conn, user.id, &hashed_new_password)?;
+        // 5. อัปเดตลง Database โดยเรียกใช้ UserService
+        UserService::update_password(conn, user.id, &hashed_new_password)?;
 
         Ok(())
     }

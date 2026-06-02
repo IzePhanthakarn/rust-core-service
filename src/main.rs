@@ -18,7 +18,6 @@ pub struct AppState {
     pub start_time: Instant,
 }
 
-// อัปเดต OpenAPI ให้กวาดอ่าน Route และ Schema ที่เราสร้างไว้
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -39,10 +38,12 @@ pub struct AppState {
         modules::users::handlers::get_me,
         modules::users::handlers::update_user_status,
         modules::users::handlers::delete_user_by_id,
-        modules::users::handlers::get_roles,
-        modules::users::handlers::assign_role,
-        modules::users::handlers::revoke_role,
         modules::users::handlers::get_user_by_id,
+
+        // Roles Routes (ย้ายมาเรียกผ่าน module roles)
+        modules::roles::handlers::get_roles,
+        modules::roles::handlers::assign_role,
+        modules::roles::handlers::revoke_role,
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -70,27 +71,30 @@ pub struct AppState {
         modules::users::models::User,
         modules::users::models::UserStatus,
         modules::users::models::UserProfile,
-        modules::users::models::MeResponse,
-        modules::users::models::UpdateProfileRequest,
-        modules::users::models::UpdateUserStatusRequest,
-        modules::users::models::UserDetailResponse,
+        
+        modules::users::dtos::MeResponse,
+        modules::users::dtos::UpdateProfileRequest,
+        modules::users::dtos::UpdateUserStatusRequest,
+        modules::users::dtos::UserDetailResponse,
+        
         core::response::PaginatedData<modules::users::models::User>,
         core::response::ApiResponse<core::response::PaginatedData<modules::users::models::User>>,
-        core::response::ApiResponse<modules::users::models::MeResponse>,
-        core::response::ApiResponse<modules::users::models::UserDetailResponse>,
+        core::response::ApiResponse<modules::users::dtos::MeResponse>,
+        core::response::ApiResponse<modules::users::dtos::UserDetailResponse>,
         // ================================
         
         // ==== Roles ====
-        modules::users::models::AssignRoleRequest,
-        modules::users::models::RevokeRoleRequest,
-        modules::users::models::Role,
-        core::response::ApiResponse<Vec<modules::users::models::Role>>,
+        modules::roles::dtos::AssignRoleRequest,
+        modules::roles::dtos::RevokeRoleRequest,
+        modules::roles::models::Role,
+        core::response::ApiResponse<Vec<modules::roles::models::Role>>,
         // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
         (name = "Auth", description = "Authentication & User Management") ,
-        (name = "Users", description = "User Management & Roles")
+        (name = "Users", description = "User Management"),
+        (name = "Roles", description = "Role Management") // เพิ่ม Tag Roles เข้าไปใน Swagger
     ),
     modifiers(&SecurityAddon)
 )]
@@ -126,9 +130,10 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(modules::health::handlers::health_check))
-        // เรียกใช้ routes ผ่าน module ย่อยที่เราเพิ่งแยก
         .nest("/auth", modules::auth::routes::auth_routes())
         .nest("/users", modules::users::routes::user_routes())
+        // ปรับให้ไม่มี /api เหมือนเส้นอื่นๆ จะได้เข้าผ่าน /roles/... ได้เลย
+        .nest("/roles", modules::roles::routes::role_routes()) 
         .merge(Scalar::with_url("/docs", ApiDoc::openapi()))
         .with_state(state);
 

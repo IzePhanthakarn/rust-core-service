@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use utoipa::ToSchema;
 
 // สร้างตัวแทนของ Data ว่างๆ เพื่อให้ Utoipa นำไปเจน Docs ได้
@@ -16,11 +16,11 @@ pub struct ApiResponse<T> {
 }
 
 // เพิ่มตัวนี้สำหรับรับ Query String: ?page=1&limit=10
-#[derive(Deserialize, utoipa::IntoParams)]
-pub struct PaginationQuery {
-    pub page: Option<i64>,
-    pub limit: Option<i64>,
-}
+// #[derive(Deserialize, utoipa::IntoParams)]
+// pub struct PaginationQuery {
+//     pub page: Option<i64>,
+//     pub limit: Option<i64>,
+// }
 
 // เพิ่มตัวนี้สำหรับห่อข้อมูลแบบแบ่งหน้า
 #[derive(Serialize, ToSchema)]
