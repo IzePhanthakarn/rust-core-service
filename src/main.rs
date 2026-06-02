@@ -50,15 +50,15 @@ pub struct AppState {
     ),
     components(schemas(
         // ==== Common Response Schemas ===
-        core::response::ApiResponse<modules::health::handlers::HealthData>,
+        core::response::ApiResponse<modules::health::dtos::HealthData>,
         core::response::ApiResponse<core::response::EmptyData>,
         core::response::ApiResponse<modules::auth::dtos::AuthResponse>,
         core::response::EmptyData,
         // ================================
 
         // ==== Health ====
-        modules::health::handlers::HealthData,
-        modules::health::handlers::DbHealth,
+        modules::health::dtos::HealthData,
+        modules::health::dtos::DbHealth,
         // ================================
         
         // ==== Auth ====
