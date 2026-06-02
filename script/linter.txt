@@ -1,0 +1,5 @@
+// run linter
+cargo clippy
+
+// run hard linter 
+cargo clippy -- -D warnings

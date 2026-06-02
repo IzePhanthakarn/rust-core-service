@@ -1,0 +1,2 @@
+// set standard format
+cargo fmt

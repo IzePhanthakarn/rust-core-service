@@ -1,0 +1,8 @@
+// run test
+cargo test
+
+// run tarpaulin test and get coverage report on terminal
+cargo tarpaulin --ignore-tests
+
+// run tarpaulin test and get html report
+cargo tarpaulin --out html
