@@ -44,6 +44,7 @@ async fn main() {
         .route("/health", get(modules::health::handlers::health_check))
         .nest("/auth", modules::auth::routes::auth_routes())
         .nest("/users", modules::users::routes::user_routes())
+        .nest("/properties", modules::properties::routes::property_routes())
         // ปรับให้ไม่มี /api เหมือนเส้นอื่นๆ จะได้เข้าผ่าน /roles/... ได้เลย
         .nest("/roles", modules::roles::routes::role_routes()) 
         .merge(Scalar::with_url("/docs", ApiDoc::openapi()))

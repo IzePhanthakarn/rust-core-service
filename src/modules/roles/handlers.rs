@@ -32,11 +32,11 @@ pub async fn get_roles(
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<Vec<Role>>>, AppError> {
     let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"iam_admin".to_string());
+        || claims.roles.contains(&"admin_roles".to_string());
 
     if !is_admin {
         return Err(AppError::Forbidden(
-            "คุณไม่มีสิทธิ์ดูรายชื่อ Role (ต้องการสิทธิ์ super_admin หรือ iam_admin)".to_string(),
+            "คุณไม่มีสิทธิ์ดูรายชื่อ Role (ต้องการสิทธิ์ super_admin หรือ admin_roles)".to_string(),
         ));
     }
 
@@ -128,7 +128,7 @@ pub async fn revoke_role(
     ValidatedJson(payload): ValidatedJson<RevokeRoleRequest>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
     let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"iam_admin".to_string());
+        || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
         return Err(AppError::Forbidden(
             "คุณไม่มีสิทธิ์ถอดสิทธิ์ผู้ใช้งาน".to_string(),

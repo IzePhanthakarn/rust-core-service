@@ -41,7 +41,7 @@ pub async fn get_users(
     Query(filters): Query<UserFilterQuery>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<PaginatedData<User>>>, AppError> {
-    let allowed_roles = ["super_admin", "iam_admin"];
+    let allowed_roles = ["super_admin", "admin_roles"];
     let has_permission = claims
         .roles
         .iter()
@@ -180,7 +180,7 @@ pub async fn update_user_status(
     ValidatedJson(payload): ValidatedJson<UpdateUserStatusRequest>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
     let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"iam_admin".to_string());
+        || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
         return Err(AppError::Forbidden(
             "คุณไม่มีสิทธิ์เปลี่ยนสถานะผู้ใช้งาน".to_string(),
@@ -227,7 +227,7 @@ pub async fn get_user_by_id(
     Path(target_user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserDetailResponse>>, AppError> {
     let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"iam_admin".to_string());
+        || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
         return Err(AppError::Forbidden(
             "คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้อื่น".to_string(),

@@ -11,14 +11,46 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    property_options (id) {
+        id -> Uuid,
+        property_type_id -> Uuid,
+        sort_order -> Int4,
+        #[max_length = 100]
+        label -> Varchar,
+        #[max_length = 50]
+        value -> Varchar,
+        is_active -> Bool,
+        created_by -> Uuid,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    property_types (id) {
+        id -> Uuid,
+        #[max_length = 100]
+        name -> Varchar,
+        #[max_length = 50]
+        code -> Varchar,
+        #[max_length = 255]
+        description -> Nullable<Varchar>,
+        created_by -> Uuid,
+        updated_by -> Uuid,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     roles (id) {
         id -> Uuid,
         #[max_length = 50]
         name -> Varchar,
         #[max_length = 255]
         description -> Nullable<Varchar>,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -32,7 +64,7 @@ diesel::table! {
         provider -> UserProvider,
         #[max_length = 255]
         provider_id -> Varchar,
-        created_at -> Timestamp,
+        created_at -> Timestamptz,
     }
 }
 
@@ -47,8 +79,8 @@ diesel::table! {
         #[max_length = 255]
         avatar_url -> Nullable<Varchar>,
         bio -> Nullable<Text>,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -57,7 +89,7 @@ diesel::table! {
         user_id -> Uuid,
         role_id -> Uuid,
         assigned_by -> Nullable<Uuid>,
-        created_at -> Timestamp,
+        created_at -> Timestamptz,
     }
 }
 
@@ -75,17 +107,21 @@ diesel::table! {
         password_hash -> Nullable<Varchar>,
         status -> UserStatus,
         token_version -> Int4,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
         deleted_at -> Nullable<Timestamp>,
     }
 }
 
+diesel::joinable!(property_options -> property_types (property_type_id));
+diesel::joinable!(property_options -> users (created_by));
 diesel::joinable!(social_accounts -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
 diesel::joinable!(user_roles -> roles (role_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    property_options,
+    property_types,
     roles,
     social_accounts,
     user_profiles,

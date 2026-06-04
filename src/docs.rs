@@ -30,6 +30,9 @@ use crate::{modules, core};
         modules::roles::handlers::create_role,
         modules::roles::handlers::assign_role,
         modules::roles::handlers::revoke_role,
+
+        // Properties Routes
+        modules::properties::handlers::create_property_type,
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -75,6 +78,13 @@ use crate::{modules, core};
         modules::roles::dtos::RevokeRoleRequest,
         modules::roles::models::Role,
         core::response::ApiResponse<Vec<modules::roles::models::Role>>,
+        // ================================
+
+        // ==== Properties ====
+        modules::properties::models::PropertyType,
+        modules::properties::models::PropertyOption,
+        
+        modules::properties::dtos::CreatePropertyTypeRequest,
         // ================================
     )),
     tags(
