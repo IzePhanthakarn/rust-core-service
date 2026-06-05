@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};

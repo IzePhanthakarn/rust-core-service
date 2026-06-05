@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 # Web Framework
-axum = "0.7"
+axum = "0.8.9"
 tokio = { version = "1.0", features = ["full"] }
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
@@ -29,7 +29,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # API Documentation (Swagger/Scalar)
 utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
-utoipa-scalar = { version = "0.2", features = ["axum"] }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }
 
 diesel-derive-enum = { version = "2.1", features = ["postgres"] }
 validator = { version = "0.18", features = ["derive"] }

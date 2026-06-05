@@ -33,6 +33,8 @@ use crate::{modules, core};
 
         // Properties Routes
         modules::properties::handlers::create_property_type,
+        modules::properties::handlers::create_property_option,
+        modules::properties::handlers::get_one_property_type,
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -85,13 +87,17 @@ use crate::{modules, core};
         modules::properties::models::PropertyOption,
         
         modules::properties::dtos::CreatePropertyTypeRequest,
+        modules::properties::dtos::CreatePropertyOptionRequest,
+        modules::properties::dtos::PropertyResponse,
+        core::response::ApiResponse<modules::properties::dtos::PropertyResponse>,
         // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
         (name = "Auth", description = "Authentication & User Management") ,
         (name = "Users", description = "User Management"),
-        (name = "Roles", description = "Role Management") // เพิ่ม Tag Roles เข้าไปใน Swagger
+        (name = "Roles", description = "Role Management"),
+        (name = "Properties", description = "Property Type and Option Management")
     ),
     modifiers(&SecurityAddon)
 )]

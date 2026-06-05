@@ -1,5 +1,4 @@
 use axum::{
-    async_trait,
     extract::{rejection::JsonRejection, FromRequest, Request},
 };
 use serde::de::DeserializeOwned;
@@ -10,7 +9,6 @@ use crate::core::errors::AppError;
 pub struct ValidatedJson<T>(pub T);
 
 // สั่งให้ Axum รัน Logic นี้ทุกครั้งที่มีการรับ JSON เข้ามา
-#[async_trait]
 impl<T, S> FromRequest<S> for ValidatedJson<T>
 where
     T: DeserializeOwned + Validate,

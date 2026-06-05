@@ -3,8 +3,8 @@ CREATE TABLE property_types (
     name VARCHAR(100) NOT NULL,
     code VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255),
-    created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    updated_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_by UUID NOT NULL REFERENCES users(id)
+    updated_by UUID NOT NULL REFERENCES users(id)
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -18,7 +18,7 @@ CREATE TABLE property_options (
     label VARCHAR(100) NOT NULL,
     value VARCHAR(50) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
-    created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_by UUID NOT NULL REFERENCES users(id)
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_property_value UNIQUE (property_type_id, value)
