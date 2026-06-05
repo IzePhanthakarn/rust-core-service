@@ -23,8 +23,8 @@ pub fn generate_tokens(
 ) -> Result<(String, String), jsonwebtoken::errors::Error> {
     let now = Utc::now();
     
-    // 1. สร้าง Access Token (อายุ 15 นาที)
-    let access_exp = now + Duration::minutes(15);
+    // 1. สร้าง Access Token (อายุ 1 วัน)
+    let access_exp = now + Duration::days(1);
     let access_claims = Claims {
         sub: user_id,
         exp: access_exp.timestamp() as usize,
