@@ -1,13 +1,21 @@
-use axum::{Json, extract::{State, Extension}, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Extension, State},
+    http::StatusCode,
+};
 
 use crate::{
     AppState,
     core::{
-        errors::AppError, extractors::ValidatedJson, jwt::Claims, response::{ApiResponse, EmptyData}
+        errors::AppError,
+        extractors::ValidatedJson,
+        jwt::Claims,
+        response::{ApiResponse, EmptyData},
     },
     modules::auth::{
         dtos::{
-            AuthResponse, ChangePasswordRequest, LoginRequest, RefreshRequest, RegisterRequest, RegisterResponse, ResetPasswordRequest
+            AuthResponse, ChangePasswordRequest, LoginRequest, RefreshRequest, RegisterRequest,
+            RegisterResponse, ResetPasswordRequest,
         },
         services::AuthService,
     },
@@ -172,11 +180,16 @@ pub async fn change_password(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<ChangePasswordRequest>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
-    
-    let mut conn = state.db_pool.get().map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
 
     // ส่ง User ID (claims.sub) เข้าไปพร้อมกับ Payload
     AuthService::change_password(&mut conn, claims.sub, payload)?;
 
-    Ok(Json(ApiResponse::success_without_data(200, "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านใหม่")))
+    Ok(Json(ApiResponse::success_without_data(
+        200,
+        "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านใหม่",
+    )))
 }

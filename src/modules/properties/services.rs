@@ -1,5 +1,5 @@
-use diesel::result::Error as DieselError;
 use diesel::PgConnection;
+use diesel::result::Error as DieselError;
 use log::debug;
 use uuid::Uuid;
 
@@ -16,12 +16,7 @@ use crate::{
 pub struct PropertyService;
 
 impl PropertyService {
-    pub fn get_property_type(
-        conn: &mut PgConnection,
-        page: i64,
-        limit: i64,
-        name: Option<String>,
-    ) {
+    pub fn get_property_type(conn: &mut PgConnection, page: i64, limit: i64, name: Option<String>) {
         // Implementation for retrieving a property type
     }
 
@@ -139,8 +134,8 @@ impl PropertyService {
 
     pub fn delete_property_type(
         conn: &mut PgConnection,
-        property_id: Uuid
-    ) -> Result<(), AppError>  {
+        property_id: Uuid,
+    ) -> Result<(), AppError> {
         let updated_rows = PropertyRepository::delete_property_type(conn, property_id)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถลบ Property ได้".to_string()))?;
 
@@ -202,13 +197,17 @@ impl PropertyService {
 
     pub fn delete_property_option(
         conn: &mut PgConnection,
-        property_option_id: Uuid
+        property_option_id: Uuid,
     ) -> Result<(), AppError> {
         let updated_rows = PropertyRepository::delete_property_option(conn, property_option_id)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถลบ Property Option ได้".to_string()))?;
+            .map_err(|_| {
+                AppError::InternalServerError("ไม่สามารถลบ Property Option ได้".to_string())
+            })?;
 
         if updated_rows == 0 {
-            return Err(AppError::BadRequest("ไม่พบ Property Option ที่ต้องการลบ".to_string()));
+            return Err(AppError::BadRequest(
+                "ไม่พบ Property Option ที่ต้องการลบ".to_string(),
+            ));
         }
 
         Ok(())

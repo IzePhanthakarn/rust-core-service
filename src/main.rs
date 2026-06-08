@@ -1,19 +1,18 @@
 use axum::http::{HeaderValue, Method};
 use axum::{Router, routing::get};
+use docs::ApiDoc;
 use dotenvy::dotenv;
-use tower_http::cors::CorsLayer;
 use std::time::Instant;
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
 use utoipa::OpenApi;
 use utoipa_scalar::{Scalar, Servable};
-use docs::ApiDoc;
 
 mod config;
 mod core;
+mod docs;
 mod modules;
 mod schema;
-mod docs;
-
 
 #[derive(Clone)]
 pub struct AppState {
@@ -32,21 +31,30 @@ async fn main() {
         start_time: Instant::now(),
     };
 
-    let frontend_url = std::env::var("FRONTEND_URL")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let frontend_url =
+        std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
     let cors = CorsLayer::new()
         .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .allow_headers(tower_http::cors::Any);
 
     let app = Router::new()
         .route("/health", get(modules::health::handlers::health_check))
         .nest("/auth", modules::auth::routes::auth_routes())
         .nest("/users", modules::users::routes::user_routes())
-        .nest("/properties", modules::properties::routes::property_routes())
+        .nest(
+            "/properties",
+            modules::properties::routes::property_routes(),
+        )
         // ปรับให้ไม่มี /api เหมือนเส้นอื่นๆ จะได้เข้าผ่าน /roles/... ได้เลย
-        .nest("/roles", modules::roles::routes::role_routes()) 
+        .nest("/roles", modules::roles::routes::role_routes())
         .merge(Scalar::with_url("/docs", ApiDoc::openapi()))
         .with_state(state)
         .layer(cors);

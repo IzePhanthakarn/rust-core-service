@@ -59,7 +59,7 @@ pub struct PropertyResponse {
     pub name: String,
     pub code: String,
     pub description: Option<String>,
-    pub options: Vec<PropertyOptionData>
+    pub options: Vec<PropertyOptionData>,
 }
 
 impl PropertyResponse {

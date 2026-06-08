@@ -1,5 +1,5 @@
-use axum::{extract::Request, http::header, middleware::Next, response::Response};
 use crate::core::{errors::AppError, jwt::verify_token};
+use axum::{extract::Request, http::header, middleware::Next, response::Response};
 
 pub async fn auth_guard(mut req: Request, next: Next) -> Result<Response, AppError> {
     // 1. ดึง Authorization Header

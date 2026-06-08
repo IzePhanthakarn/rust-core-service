@@ -1,10 +1,11 @@
 use axum::{
-    extract::{Extension, Path, Query, State},
     Json,
+    extract::{Extension, Path, Query, State},
 };
 use uuid::Uuid;
 
 use crate::{
+    AppState,
     core::{
         errors::AppError,
         extractors::ValidatedJson,
@@ -23,7 +24,6 @@ use crate::{
             services::UserService,
         },
     },
-    AppState,
 };
 
 #[utoipa::path(
@@ -51,31 +51,12 @@ pub async fn get_users(
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้".to_string()));
     }
 
-    let page = filters.page.unwrap_or(1).max(1);
-    let limit = filters.limit.unwrap_or(10).clamp(1, 100);
-
     let mut conn = state
         .db_pool
         .get()
         .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
 
-    let (items, total_items) = UserRepository::get_all_users(
-        &mut conn,
-        page,
-        limit,
-        filters.email,
-        filters.status,
-    )
-    .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
-
-    let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
-
-    let data = PaginatedData {
-        items,
-        total_items,
-        total_pages,
-        current_page: page,
-    };
+    let data = UserService::get_all_users(&mut conn, filters)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
 }
@@ -182,9 +163,7 @@ pub async fn update_user_status(
     let is_admin = claims.roles.contains(&"super_admin".to_string())
         || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
-        return Err(AppError::Forbidden(
-            "คุณไม่มีสิทธิ์เปลี่ยนสถานะผู้ใช้งาน".to_string(),
-        ));
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เปลี่ยนสถานะผู้ใช้งาน".to_string()));
     }
 
     if claims.sub == target_user_id {
@@ -229,9 +208,7 @@ pub async fn get_user_by_id(
     let is_admin = claims.roles.contains(&"super_admin".to_string())
         || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
-        return Err(AppError::Forbidden(
-            "คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้อื่น".to_string(),
-        ));
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้อื่น".to_string()));
     }
 
     let mut conn = state
@@ -277,9 +254,7 @@ pub async fn delete_user_by_id(
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
     let is_super_admin = claims.roles.contains(&"super_admin".to_string());
     if !is_super_admin {
-        return Err(AppError::Forbidden(
-            "คุณไม่มีสิทธิ์ลบบัญชีผู้ใช้งาน".to_string(),
-        ));
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบบัญชีผู้ใช้งาน".to_string()));
     }
 
     if claims.sub == target_user_id {

@@ -1,7 +1,7 @@
+use crate::modules::users::models::User;
+use crate::schema::users;
 use diesel::prelude::*;
 use uuid::Uuid;
-use crate::schema::users;
-use crate::modules::users::models::User;
 
 pub struct AuthRepository;
 

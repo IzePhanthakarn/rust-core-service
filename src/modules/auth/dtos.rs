@@ -7,17 +7,17 @@ use validator::Validate;
 pub struct RegisterRequest {
     #[validate(email(message = "รูปแบบอีเมลไม่ถูกต้อง"))]
     pub email: String,
-    
+
     #[validate(length(min = 6, message = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"))]
     pub password: String,
-    
+
     // รับชื่อมาพร้อมกันเลยเพื่อไปสร้างตาราง user_profiles ด้วย
     #[validate(length(min = 1, message = "กรุณากรอกชื่อจริง"))]
     pub first_name: String,
 
     #[validate(length(min = 1, message = "กรุณากรอกคำลับเพื่อการกู้คืนรหัสผ่าน"))]
     pub secret_word: String,
-    
+
     #[validate(length(min = 1, message = "กรุณากรอกนามสกุล"))]
     pub last_name: String,
 }
@@ -54,10 +54,10 @@ pub struct RefreshRequest {
 pub struct ResetPasswordRequest {
     #[validate(email(message = "รูปแบบอีเมลไม่ถูกต้อง"))]
     pub email: String,
-    
+
     #[validate(length(min = 1, message = "กรุณากรอกคำลับเพื่อการกู้คืนรหัสผ่าน"))]
     pub secret_word: String,
-    
+
     #[validate(length(min = 6, message = "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"))]
     pub new_password: String,
 }
@@ -66,7 +66,7 @@ pub struct ResetPasswordRequest {
 pub struct ChangePasswordRequest {
     #[validate(length(min = 1, message = "กรุณากรอกรหัสผ่านเดิม"))]
     pub old_password: String,
-    
+
     #[validate(length(min = 6, message = "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"))]
     pub new_password: String,
 }

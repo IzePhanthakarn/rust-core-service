@@ -1,8 +1,8 @@
+use crate::modules::roles::models::NewUserRole;
+use crate::modules::users::models::{NewUser, NewUserProfile, User, UserProfile, UserStatus};
+use crate::schema::{roles, user_profiles, user_roles, users};
 use diesel::prelude::*;
 use uuid::Uuid;
-use crate::schema::{roles, user_profiles, user_roles, users};
-use crate::modules::users::models::{NewUser, NewUserProfile, User, UserProfile, UserStatus};
-use crate::modules::roles::models::NewUserRole;
 
 pub struct UserRepository;
 
@@ -61,8 +61,12 @@ impl UserRepository {
     ) -> QueryResult<(Vec<User>, i64)> {
         let offset = (page - 1) * limit;
 
-        let mut data_query = users::table.filter(users::deleted_at.is_null()).into_boxed();
-        let mut count_query = users::table.filter(users::deleted_at.is_null()).into_boxed();
+        let mut data_query = users::table
+            .filter(users::deleted_at.is_null())
+            .into_boxed();
+        let mut count_query = users::table
+            .filter(users::deleted_at.is_null())
+            .into_boxed();
 
         if let Some(email_text) = email_filter {
             let search_pattern = format!("%{}%", email_text);

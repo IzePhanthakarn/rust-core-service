@@ -1,9 +1,9 @@
+use crate::core::response::{ApiResponse, EmptyData};
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
-use crate::core::response::{ApiResponse, EmptyData};
 
 pub enum AppError {
     BadRequest(String),
@@ -33,7 +33,7 @@ impl IntoResponse for AppError {
             Json(ApiResponse::<EmptyData>::error(status.as_u16(), &message))
         };
         // ===================================
-        
+
         (status, body).into_response()
     }
 }

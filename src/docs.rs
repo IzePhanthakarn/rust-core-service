@@ -1,7 +1,7 @@
 // src/docs.rs
-use utoipa::{Modify, OpenApi};
+use crate::{core, modules};
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
-use crate::{modules, core};
+use utoipa::{Modify, OpenApi};
 
 #[derive(OpenApi)]
 #[openapi(

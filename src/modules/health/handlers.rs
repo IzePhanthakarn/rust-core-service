@@ -22,11 +22,7 @@ pub async fn health_check(
         .map_err(|_| AppError::InternalServerError("Database Connection Error".to_string()))?;
 
     // === เพิ่ม state.sys.clone() เข้าไปเป็น Parameter ตัวสุดท้าย ===
-    let data = HealthService::get_system_health(
-        &mut conn,
-        &state.db_pool,
-        state.start_time,
-    )?;
+    let data = HealthService::get_system_health(&mut conn, &state.db_pool, state.start_time)?;
 
     Ok(Json(ApiResponse::success(200, "Server is healthy", data)))
 }

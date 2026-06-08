@@ -1,11 +1,14 @@
-use std::time::Instant;
 use chrono::Utc;
 use diesel::PgConnection;
+use std::time::Instant;
 
 use crate::{
-    config::database::DbPool, 
+    config::database::DbPool,
     core::errors::AppError,
-    modules::health::{dtos::{HealthData, DbHealth}, repositories::HealthRepository}
+    modules::health::{
+        dtos::{DbHealth, HealthData},
+        repositories::HealthRepository,
+    },
 };
 
 pub struct HealthService;
@@ -29,7 +32,7 @@ impl HealthService {
         let db_health = DbHealth {
             status: "ok".to_string(),
             latency_ms,
-            max_connections: pool.max_size(), 
+            max_connections: pool.max_size(),
             total_connections: total,
             active_connections: active,
             idle_connections: idle,

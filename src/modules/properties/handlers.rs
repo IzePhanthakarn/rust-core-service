@@ -159,7 +159,7 @@ pub async fn delete_property_type(
     State(state): State<AppState>,
     Extension(claims): Extension<Claims>,
     Path(property_type_id): Path<Uuid>,
-) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError>{
+) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
     let is_admin = claims.roles.contains(&"super_admin".to_string())
         || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
@@ -173,7 +173,13 @@ pub async fn delete_property_type(
 
     PropertyService::delete_property_type(&mut conn, property_type_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Property Type สำเร็จ"))))
+    Ok((
+        StatusCode::OK,
+        Json(ApiResponse::success_without_data(
+            200,
+            "ลบ Property Type สำเร็จ",
+        )),
+    ))
 }
 
 #[utoipa::path(
@@ -239,7 +245,7 @@ pub async fn delete_property_option(
     State(state): State<AppState>,
     Extension(claims): Extension<Claims>,
     Path(property_option_id): Path<Uuid>,
-) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError>{
+) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
     let is_admin = claims.roles.contains(&"super_admin".to_string())
         || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
@@ -255,5 +261,11 @@ pub async fn delete_property_option(
 
     PropertyService::delete_property_option(&mut conn, property_option_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Property Option สำเร็จ"))))
+    Ok((
+        StatusCode::OK,
+        Json(ApiResponse::success_without_data(
+            200,
+            "ลบ Property Option สำเร็จ",
+        )),
+    ))
 }

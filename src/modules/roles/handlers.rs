@@ -1,20 +1,22 @@
 use axum::{
-    extract::{Extension, State},
     Json,
+    extract::{Extension, State},
 };
 
 use crate::{
-    AppState, core::{
+    AppState,
+    core::{
         errors::AppError,
         extractors::ValidatedJson,
         jwt::Claims,
         response::{ApiResponse, EmptyData},
-    }, modules::roles::{
+    },
+    modules::roles::{
         dtos::{AssignRoleRequest, CreateRoleRequest, RevokeRoleRequest},
         models::Role,
         repositories::RoleRepository,
         services::RoleService,
-    }
+    },
 };
 
 #[utoipa::path(
@@ -130,15 +132,11 @@ pub async fn revoke_role(
     let is_admin = claims.roles.contains(&"super_admin".to_string())
         || claims.roles.contains(&"admin_roles".to_string());
     if !is_admin {
-        return Err(AppError::Forbidden(
-            "คุณไม่มีสิทธิ์ถอดสิทธิ์ผู้ใช้งาน".to_string(),
-        ));
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ถอดสิทธิ์ผู้ใช้งาน".to_string()));
     }
 
     if claims.sub == payload.target_user_id {
-        return Err(AppError::BadRequest(
-            "ไม่สามารถถอดสิทธิ์ของตัวเองได้".to_string(),
-        ));
+        return Err(AppError::BadRequest("ไม่สามารถถอดสิทธิ์ของตัวเองได้".to_string()));
     }
 
     let mut conn = state
@@ -173,11 +171,12 @@ pub async fn create_role(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<CreateRoleRequest>,
 ) -> Result<Json<ApiResponse<Role>>, AppError> {
-    
     // ล็อกสิทธิ์เฉพาะ super_admin
     let is_super_admin = claims.roles.contains(&"super_admin".to_string());
     if !is_super_admin {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Role ใหม่ (ต้องการสิทธิ์ super_admin)".to_string()));
+        return Err(AppError::Forbidden(
+            "คุณไม่มีสิทธิ์สร้าง Role ใหม่ (ต้องการสิทธิ์ super_admin)".to_string(),
+        ));
     }
 
     let mut conn = state
@@ -188,5 +187,9 @@ pub async fn create_role(
     // แกะเอา payload.description ส่งเข้าไปด้วย
     let new_role = RoleService::create_role(&mut conn, &payload.name, payload.description)?;
 
-    Ok(Json(ApiResponse::success(201, "สร้าง Role ใหม่สำเร็จ", new_role)))
+    Ok(Json(ApiResponse::success(
+        201,
+        "สร้าง Role ใหม่สำเร็จ",
+        new_role,
+    )))
 }

@@ -1,7 +1,7 @@
+use crate::modules::roles::models::{NewRole, NewUserRole, Role};
+use crate::schema::{roles, user_roles};
 use diesel::prelude::*;
 use uuid::Uuid;
-use crate::schema::{roles, user_roles};
-use crate::modules::roles::models::{NewRole, NewUserRole, Role};
 
 pub struct RoleRepository;
 
@@ -25,7 +25,12 @@ impl RoleRepository {
             .first(conn)
     }
 
-    pub fn assign_role(conn: &mut PgConnection, target_user_id: Uuid, role_id: Uuid, assigned_by: Uuid) -> QueryResult<usize> {
+    pub fn assign_role(
+        conn: &mut PgConnection,
+        target_user_id: Uuid,
+        role_id: Uuid,
+        assigned_by: Uuid,
+    ) -> QueryResult<usize> {
         let new_user_role = NewUserRole {
             user_id: target_user_id,
             role_id,
@@ -38,7 +43,11 @@ impl RoleRepository {
             .execute(conn)
     }
 
-    pub fn revoke_role(conn: &mut PgConnection, target_user_id: Uuid, role_id_to_revoke: Uuid) -> QueryResult<usize> {
+    pub fn revoke_role(
+        conn: &mut PgConnection,
+        target_user_id: Uuid,
+        role_id_to_revoke: Uuid,
+    ) -> QueryResult<usize> {
         diesel::delete(
             user_roles::table
                 .filter(user_roles::user_id.eq(target_user_id))
@@ -56,19 +65,18 @@ impl RoleRepository {
     }
 
     pub fn create_role(
-        conn: &mut PgConnection, 
-        name: &str, 
-        description: Option<String>
+        conn: &mut PgConnection,
+        name: &str,
+        description: Option<String>,
     ) -> QueryResult<Role> {
-        
-        let new_role = NewRole { 
+        let new_role = NewRole {
             name: name.to_string(),
             description,
         };
 
         diesel::insert_into(roles::table)
             .values(&new_role)
-            .returning(Role::as_returning()) 
+            .returning(Role::as_returning())
             .get_result(conn)
     }
 }
