@@ -113,11 +113,37 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    work_log_tags (log_id, work_tag) {
+        log_id -> Uuid,
+        #[max_length = 50]
+        work_tag -> Varchar,
+    }
+}
+
+diesel::table! {
+    work_logs (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        #[max_length = 100]
+        title -> Varchar,
+        content -> Text,
+        mood_score -> Int4,
+        productivity_score -> Int4,
+        is_draft -> Bool,
+        date_logged -> Timestamptz,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
 diesel::joinable!(property_options -> property_types (property_type_id));
 diesel::joinable!(property_options -> users (created_by));
 diesel::joinable!(social_accounts -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
 diesel::joinable!(user_roles -> roles (role_id));
+diesel::joinable!(work_log_tags -> work_logs (log_id));
+diesel::joinable!(work_logs -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     property_options,
@@ -127,4 +153,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     user_profiles,
     user_roles,
     users,
+    work_log_tags,
+    work_logs,
 );

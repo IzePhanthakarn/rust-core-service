@@ -39,7 +39,10 @@ use utoipa::{Modify, OpenApi};
         modules::properties::handlers::delete_property_type,
         modules::properties::handlers::create_property_option,
         modules::properties::handlers::update_property_option_status,
-        modules::properties::handlers::delete_property_option
+        modules::properties::handlers::delete_property_option,
+
+        // Work Logs Routes
+        modules::work_logs::handlers::create_work_log
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -102,6 +105,13 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<modules::properties::models::PropertyType>,
         core::response::ApiResponse<modules::properties::models::PropertyOption>,
         core::response::ApiResponse<modules::properties::dtos::PropertyResponse>,
+        // ================================
+
+        // ==== Work Logs ====
+        modules::work_logs::models::WorkLog,
+        modules::work_logs::dtos::CreateWorkLogRequest,
+        modules::work_logs::dtos::WorkLogResponse,
+        core::response::ApiResponse<modules::work_logs::dtos::WorkLogResponse>,
         // ================================
     )),
     tags(

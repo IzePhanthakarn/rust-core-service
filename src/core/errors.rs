@@ -37,3 +37,25 @@ impl IntoResponse for AppError {
         (status, body).into_response()
     }
 }
+
+impl From<diesel::result::Error> for AppError {
+    fn from(err: diesel::result::Error) -> Self {
+        match err {
+            // ถ้าเป็น Not Found ให้แปลงเป็น AppError::NotFound
+            diesel::result::Error::NotFound => {
+                AppError::NotFound("ข้อมูลที่ต้องการไม่พบในระบบ".to_string())
+            }
+            // ถ้าเป็น Unique Violation (เช่น อีเมลซ้ำ) ให้แปลงเป็น Conflict
+            diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::UniqueViolation,
+                _,
+            ) => AppError::Conflict("ข้อมูลนี้มีอยู่แล้วในระบบ".to_string()),
+            // อื่นๆ ให้ถือว่าเป็น Internal Server Error
+            _ => {
+                // แนะนำ: ทำการ log ตัว err จริงๆ ไว้ด้วย เพื่อให้ Debug ง่ายขึ้น
+                eprintln!("Database Error: {:?}", err);
+                AppError::InternalServerError("เกิดข้อผิดพลาดจากฐานข้อมูล".to_string())
+            }
+        }
+    }
+}
