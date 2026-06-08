@@ -32,9 +32,12 @@ use crate::{modules, core};
         modules::roles::handlers::revoke_role,
 
         // Properties Routes
-        modules::properties::handlers::create_property_type,
-        modules::properties::handlers::create_property_option,
         modules::properties::handlers::get_one_property_type,
+        modules::properties::handlers::create_property_type,
+        modules::properties::handlers::update_property_type,
+        modules::properties::handlers::delete_property_type,
+        modules::properties::handlers::create_property_option,
+        modules::properties::handlers::delete_property_option
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -85,10 +88,13 @@ use crate::{modules, core};
         // ==== Properties ====
         modules::properties::models::PropertyType,
         modules::properties::models::PropertyOption,
-        
         modules::properties::dtos::CreatePropertyTypeRequest,
+        modules::properties::dtos::UpdatePropertyTypeRequest,
         modules::properties::dtos::CreatePropertyOptionRequest,
         modules::properties::dtos::PropertyResponse,
+
+        core::response::ApiResponse<modules::properties::models::PropertyType>,
+        core::response::ApiResponse<modules::properties::models::PropertyOption>,
         core::response::ApiResponse<modules::properties::dtos::PropertyResponse>,
         // ================================
     )),

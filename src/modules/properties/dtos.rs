@@ -16,6 +16,16 @@ pub struct CreatePropertyTypeRequest {
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
+pub struct UpdatePropertyTypeRequest {
+    pub id: Uuid,
+    #[validate(length(min = 1, message = "กรุณาระบุชื่อ Property Type ที่ต้องการแก้ไข"))]
+    pub name: String,
+    #[validate(length(min = 1, message = "กรุณาระบุ Code ของ Property Type ที่ต้องการแก้ไข"))]
+    pub code: String,
+    pub description: Option<String>,
+}
+
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct CreatePropertyOptionRequest {
     #[validate(length(min = 1, message = "กรุณาระบุชื่อ Property Option ที่ต้องการสร้าง"))]
     pub label: String,

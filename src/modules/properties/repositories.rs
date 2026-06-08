@@ -1,10 +1,13 @@
 use crate::modules::properties::dtos::{PropertyOptionData, PropertyTypeData};
-use crate::modules::properties::models::{NewPropertyOption, NewPropertyType, PropertyOption};
+use crate::modules::properties::models::{
+    NewPropertyOption, NewPropertyType, PropertyOption, UpdatePropertyType,
+};
 use crate::schema::property_options;
-use uuid::Uuid;
 use crate::{modules::properties::models::PropertyType, schema::property_types};
+use diesel::dsl::update;
 use diesel::prelude::*;
 use diesel::{PgConnection, QueryResult};
+use uuid::Uuid;
 
 pub struct PropertyRepository;
 
@@ -25,10 +28,39 @@ impl PropertyRepository {
             .optional()
     }
 
-    pub fn get_all_property_type(conn: &mut PgConnection) -> QueryResult<Vec<PropertyType>> {
-        property_types::table
-            .select(PropertyType::as_select())
-            .load::<PropertyType>(conn)
+    pub fn get_all_property(
+        conn: &mut PgConnection,
+        page: i64,
+        limit: i64,
+        name: Option<String>,
+        code: Option<String>,
+    ) -> QueryResult<(Vec<PropertyType>, i64)> {
+        let offset = (page - 1) * limit;
+
+        let mut data_query = property_types::table.into_boxed();
+        let mut count_query = property_types::table.into_boxed();
+
+        if let Some(name_text) = name {
+            let search_pattern = format!("%{}%", name_text);
+            data_query = data_query.filter(property_types::name.ilike(search_pattern.clone()));
+            count_query = count_query.filter(property_types::name.ilike(search_pattern));
+        }
+
+        if let Some(code_text) = code {
+            let search_pattern = format!("%{}%", code_text);
+            data_query = data_query.filter(property_types::code.ilike(search_pattern.clone()));
+            count_query = count_query.filter(property_types::code.ilike(search_pattern));
+        }
+
+        let items = data_query
+            .order(property_types::created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .load::<PropertyType>(conn)?;
+
+        let total: i64 = count_query.count().get_result(conn)?;
+
+        Ok((items, total))
     }
 
     pub fn get_one_property_type(
@@ -51,25 +83,37 @@ impl PropertyRepository {
 
     pub fn create_property_type(
         conn: &mut PgConnection,
-        new_property: NewPropertyType
+        new_property: NewPropertyType,
     ) -> QueryResult<PropertyType> {
-
         diesel::insert_into(property_types::table)
-        .values(&new_property)
-        .returning(PropertyType::as_returning())
-        .get_result(conn)
+            .values(&new_property)
+            .returning(PropertyType::as_returning())
+            .get_result(conn)
     }
 
-    pub fn update_property_type() {
-        // Implementation for updating a property type
+    pub fn update_property_type(
+        conn: &mut PgConnection,
+        updated_property: UpdatePropertyType,
+    ) -> QueryResult<PropertyType> {
+        update(property_types::table)
+            .filter(property_types::id.eq(updated_property.id))
+            .set(updated_property)
+            .returning(PropertyType::as_returning())
+            .get_result(conn)
     }
 
-    pub fn delete_property_type() {
+    pub fn delete_property_type(conn: &mut PgConnection, property_id: Uuid) -> QueryResult<usize> {
         // Implementation for deleting a property type
+        diesel::delete(property_types::table.filter(property_types::id.eq(property_id)))
+            .execute(conn)
     }
 
     // ฟังก์ชันเช็คว่า properties_id นั้นมี value ใน property_options หรือยัง
-    pub fn check_property_options(conn: &mut PgConnection, property_id: Uuid, value: &str) -> QueryResult<bool> {
+    pub fn check_property_options(
+        conn: &mut PgConnection,
+        property_id: Uuid,
+        value: &str,
+    ) -> QueryResult<bool> {
         let count = property_options::table
             .filter(property_options::property_type_id.eq(property_id))
             .filter(property_options::value.eq(value))
@@ -79,7 +123,10 @@ impl PropertyRepository {
         Ok(count > 0)
     }
 
-    pub fn count_options_by_property_type_id(conn: &mut PgConnection, property_type_id: Uuid) -> QueryResult<i64> {
+    pub fn count_options_by_property_type_id(
+        conn: &mut PgConnection,
+        property_type_id: Uuid,
+    ) -> QueryResult<i64> {
         property_options::table
             .filter(property_options::property_type_id.eq(property_type_id))
             .count()
@@ -88,15 +135,19 @@ impl PropertyRepository {
 
     pub fn create_property_option(
         conn: &mut PgConnection,
-        newPropertyOption: NewPropertyOption
+        new_property_option: NewPropertyOption,
     ) -> QueryResult<PropertyOption> {
         diesel::insert_into(property_options::table)
-            .values(&newPropertyOption)
+            .values(&new_property_option)
             .returning(PropertyOption::as_returning())
             .get_result(conn)
     }
 
-    pub fn delete_property_option() {
-        // Implementation for deleting a property option
+    pub fn delete_property_option(
+        conn: &mut PgConnection,
+        property_option_id: Uuid,
+    ) -> QueryResult<usize> {
+        diesel::delete(property_options::table.filter(property_options::id.eq(property_option_id)))
+            .execute(conn)
     }
 }

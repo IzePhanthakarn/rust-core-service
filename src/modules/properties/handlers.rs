@@ -9,7 +9,10 @@ use crate::{
     AppState,
     core::{errors::AppError, extractors::ValidatedJson, jwt::Claims, response::ApiResponse},
     modules::properties::{
-        dtos::{CreatePropertyOptionRequest, CreatePropertyTypeRequest, PropertyResponse},
+        dtos::{
+            CreatePropertyOptionRequest, CreatePropertyTypeRequest, PropertyResponse,
+            UpdatePropertyTypeRequest,
+        },
         models::{PropertyOption, PropertyType},
         services::PropertyService,
     },
@@ -98,6 +101,82 @@ pub async fn create_property_type(
 }
 
 #[utoipa::path(
+    put,
+    path = "/properties",
+    tag = "Properties",
+    request_body = UpdatePropertyTypeRequest,
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "Property type updated successfully", body = PropertyType),
+        (status = 404, description = "Property type not found"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn update_property_type(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    ValidatedJson(payload): ValidatedJson<UpdatePropertyTypeRequest>,
+) -> Result<Json<ApiResponse<PropertyType>>, AppError> {
+    let is_admin = claims.roles.contains(&"super_admin".to_string())
+        || claims.roles.contains(&"admin_roles".to_string());
+    if !is_admin {
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Property".to_string()));
+    }
+
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    let updated_property = PropertyService::update_property_type(
+        &mut conn,
+        payload.id,
+        &payload.name,
+        &payload.code,
+        payload.description,
+        claims.sub,
+    )?;
+
+    Ok(Json(ApiResponse::success(
+        200,
+        "แก้ไข Property Type สำเร็จ",
+        updated_property,
+    )))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/properties/{property_type_id}",
+    tag = "Properties",
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "Property type deleted successfully"),
+        (status = 404, description = "Property type not found"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn delete_property_type(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(property_type_id): Path<Uuid>,
+) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError>{
+    let is_admin = claims.roles.contains(&"super_admin".to_string())
+        || claims.roles.contains(&"admin_roles".to_string());
+    if !is_admin {
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ Property".to_string()));
+    }
+
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    PropertyService::delete_property_type(&mut conn, property_type_id)?;
+
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Property Type สำเร็จ"))))
+}
+
+#[utoipa::path(
     post,
     path = "/properties/options",
     tag = "Properties",
@@ -109,7 +188,6 @@ pub async fn create_property_type(
         (status = 500, description = "Internal server error")
     )
 )]
-
 pub async fn create_property_option(
     State(state): State<AppState>,
     Extension(claims): Extension<Claims>,
@@ -144,4 +222,38 @@ pub async fn create_property_option(
             new_option,
         )),
     ))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/properties/options/{property_option_id}",
+    tag = "Properties",
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "Property option deleted successfully"),
+        (status = 404, description = "Property option not found"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn delete_property_option(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(property_option_id): Path<Uuid>,
+) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError>{
+    let is_admin = claims.roles.contains(&"super_admin".to_string())
+        || claims.roles.contains(&"admin_roles".to_string());
+    if !is_admin {
+        return Err(AppError::Forbidden(
+            "คุณไม่มีสิทธิ์ลบ Property Option".to_string(),
+        ));
+    }
+
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    PropertyService::delete_property_option(&mut conn, property_option_id)?;
+
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Property Option สำเร็จ"))))
 }

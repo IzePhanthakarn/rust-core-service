@@ -1,10 +1,10 @@
+use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::{Serialize};
+use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
-use crate::schema::{ property_types, property_options};
+use crate::schema::{property_options, property_types};
 
 #[derive(Queryable, Selectable, Serialize, Clone, Debug, ToSchema)]
 #[diesel(table_name = property_types)]
@@ -42,6 +42,16 @@ pub struct NewPropertyType {
     pub code: String,
     pub description: Option<String>,
     pub created_by: Uuid,
+    pub updated_by: Uuid,
+}
+
+#[derive(AsChangeset)]
+#[diesel(table_name = property_types)]
+pub struct UpdatePropertyType {
+    pub id: Uuid,
+    pub name: String,
+    pub code: String,
+    pub description: Option<String>,
     pub updated_by: Uuid,
 }
 

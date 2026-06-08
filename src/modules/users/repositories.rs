@@ -52,7 +52,7 @@ impl UserRepository {
         })
     }
 
-    pub fn get_all_paginated(
+    pub fn get_all_users(
         conn: &mut PgConnection,
         page: i64,
         limit: i64,

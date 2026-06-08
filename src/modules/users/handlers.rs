@@ -59,7 +59,7 @@ pub async fn get_users(
         .get()
         .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
 
-    let (items, total_items) = UserRepository::get_all_paginated(
+    let (items, total_items) = UserRepository::get_all_users(
         &mut conn,
         page,
         limit,
