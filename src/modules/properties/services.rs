@@ -3,6 +3,8 @@ use diesel::result::Error as DieselError;
 use log::debug;
 use uuid::Uuid;
 
+use crate::core::response::PaginatedData;
+use crate::modules::properties::dtos::{PropertyFilterQuery, PropertyOptionData, PropertyTypeData};
 use crate::modules::properties::models::UpdatePropertyType;
 use crate::{
     core::errors::AppError,
@@ -16,8 +18,26 @@ use crate::{
 pub struct PropertyService;
 
 impl PropertyService {
-    pub fn get_property_type(conn: &mut PgConnection, page: i64, limit: i64, name: Option<String>) {
+    pub fn get_property_type(
+        conn: &mut PgConnection,
+        filters: PropertyFilterQuery,
+    ) -> Result<PaginatedData<PropertyTypeData>, AppError> {
         // Implementation for retrieving a property type
+        let page = filters.page.unwrap_or(1).max(1);
+        let limit = filters.limit.unwrap_or(10).clamp(1, 100);
+
+        let (items, total_items) =
+            PropertyRepository::get_all_property(conn, page, limit, filters.name, filters.code)
+                .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
+
+        let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
+
+        Ok(PaginatedData {
+            items,
+            total_items,
+            total_pages,
+            current_page: page,
+        })
     }
 
     pub fn get_one_property_type(
@@ -191,8 +211,18 @@ impl PropertyService {
         Ok(result)
     }
 
-    pub fn update_property_is_active() {
-        // Implementation for updating a property option
+    pub fn update_property_is_active(
+        conn: &mut PgConnection,
+        property_option_id: Uuid,
+        is_active: bool,
+    ) -> Result<PropertyOptionData, AppError> {
+        let result =
+            PropertyRepository::update_property_is_active(conn, property_option_id, is_active)
+                .map_err(|e| {
+                    println!("Database Error: {:?}", e);
+                    AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string())
+                })?;
+        Ok(result)
     }
 
     pub fn delete_property_option(

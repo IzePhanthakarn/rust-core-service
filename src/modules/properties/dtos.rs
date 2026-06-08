@@ -1,6 +1,6 @@
 use diesel::{Selectable, deserialize::Queryable, pg};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -42,6 +42,15 @@ pub struct PropertyTypeData {
     pub name: String,
     pub code: String,
     pub description: Option<String>,
+    pub created_at: chrono::NaiveDateTime,
+}
+
+#[derive(Deserialize, IntoParams, ToSchema)]
+pub struct PropertyFilterQuery {
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+    pub name: Option<String>,
+    pub code: Option<String>,
 }
 
 #[derive(Queryable, Selectable, Serialize, ToSchema)]
@@ -51,6 +60,7 @@ pub struct PropertyOptionData {
     pub id: Uuid,
     pub label: String,
     pub value: String,
+    pub is_active: bool,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -73,4 +83,9 @@ impl PropertyResponse {
             options: opts,
         }
     }
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct UpdateStatusRequest {
+    pub is_active: bool,
 }

@@ -2,14 +2,16 @@ use super::handlers;
 use crate::{AppState, core::middleware::auth_guard};
 use axum::{
     Router, middleware,
-    routing::{delete, get, post},
+    routing::{delete, get, patch, post},
 };
 
 pub fn property_routes() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            post(handlers::create_property_type).put(handlers::update_property_type),
+            get(handlers::get_all_property_type)
+                .post(handlers::create_property_type)
+                .put(handlers::update_property_type),
         )
         .route(
             "/{property_type_id}",
@@ -19,6 +21,10 @@ pub fn property_routes() -> Router<AppState> {
         .route(
             "/options/{property_option_id}",
             delete(handlers::delete_property_option),
+        )
+        .route(
+            "/options/{property_option_id}/status",
+            patch(handlers::update_property_option_status),
         )
         .route_layer(middleware::from_fn(auth_guard))
 }

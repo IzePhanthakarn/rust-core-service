@@ -32,11 +32,13 @@ use utoipa::{Modify, OpenApi};
         modules::roles::handlers::revoke_role,
 
         // Properties Routes
+        modules::properties::handlers::get_all_property_type,
         modules::properties::handlers::get_one_property_type,
         modules::properties::handlers::create_property_type,
         modules::properties::handlers::update_property_type,
         modules::properties::handlers::delete_property_type,
         modules::properties::handlers::create_property_option,
+        modules::properties::handlers::update_property_option_status,
         modules::properties::handlers::delete_property_option
     ),
     components(schemas(
@@ -92,6 +94,10 @@ use utoipa::{Modify, OpenApi};
         modules::properties::dtos::UpdatePropertyTypeRequest,
         modules::properties::dtos::CreatePropertyOptionRequest,
         modules::properties::dtos::PropertyResponse,
+        modules::properties::dtos::PropertyTypeData,
+        modules::properties::dtos::PropertyOptionData,
+        modules::properties::dtos::PropertyFilterQuery,
+        modules::properties::dtos::UpdateStatusRequest,
 
         core::response::ApiResponse<modules::properties::models::PropertyType>,
         core::response::ApiResponse<modules::properties::models::PropertyOption>,

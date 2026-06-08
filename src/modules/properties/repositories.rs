@@ -34,7 +34,7 @@ impl PropertyRepository {
         limit: i64,
         name: Option<String>,
         code: Option<String>,
-    ) -> QueryResult<(Vec<PropertyType>, i64)> {
+    ) -> QueryResult<(Vec<PropertyTypeData>, i64)> {
         let offset = (page - 1) * limit;
 
         let mut data_query = property_types::table.into_boxed();
@@ -54,9 +54,10 @@ impl PropertyRepository {
 
         let items = data_query
             .order(property_types::created_at.desc())
+            .select(PropertyTypeData::as_select())
             .limit(limit)
             .offset(offset)
-            .load::<PropertyType>(conn)?;
+            .load::<PropertyTypeData>(conn)?;
 
         let total: i64 = count_query.count().get_result(conn)?;
 
@@ -140,6 +141,17 @@ impl PropertyRepository {
         diesel::insert_into(property_options::table)
             .values(&new_property_option)
             .returning(PropertyOption::as_returning())
+            .get_result(conn)
+    }
+
+    pub fn update_property_is_active(
+        conn: &mut PgConnection,
+        property_option_id: Uuid,
+        is_active: bool,
+    ) -> QueryResult<PropertyOptionData> {
+        diesel::update(property_options::table.filter(property_options::id.eq(property_option_id)))
+            .set(property_options::is_active.eq(is_active))
+            .returning(PropertyOptionData::as_returning())
             .get_result(conn)
     }
 
