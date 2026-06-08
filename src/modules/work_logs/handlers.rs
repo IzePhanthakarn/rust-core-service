@@ -25,19 +25,12 @@ pub async fn create_work_log(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<CreateWorkLogRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<WorkLogResponse>>), AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Property".to_string()));
-    }
-
     let mut conn = state
         .db_pool
         .get()
-        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+        .map_err(|_| AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string()))?;
 
-    let result = WorkLogService::create_work_log(&mut conn, &payload, claims.sub)
-        .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
+    let result = WorkLogService::create_work_log(&mut conn, &payload, claims.sub)?;
 
     Ok((
         StatusCode::CREATED,

@@ -25,26 +25,26 @@ pub struct WorkLog {
 #[derive(Queryable, Selectable, Serialize, Clone, Debug, ToSchema)]
 #[diesel(table_name = work_log_tags)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct WorkLogtag {
+pub struct WorkLogTag {
     pub log_id: Uuid,
     pub work_tag: String,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = work_logs)]
-pub struct NewWorkLog {
+pub struct NewWorkLog<'a> {
     pub user_id: Uuid,
-    pub title: String,
-    pub content: Option<String>,
-    pub mood_score: Option<i32>,
-    pub productivity_score: Option<i32>,
-    pub is_draft: Option<bool>,
-    pub date_logged: Option<DateTime<Utc>>,
+    pub title: &'a str,
+    pub content: &'a str,
+    pub mood_score: i32,
+    pub productivity_score: i32,
+    pub is_draft: bool,
+    pub date_logged: DateTime<Utc>,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = work_log_tags)]
-pub struct NewWorkLogTag {
+pub struct NewWorkLogTag<'a> {
     pub log_id: Uuid,
-    pub work_tag: String,
+    pub work_tag: &'a str,
 }

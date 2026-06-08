@@ -56,7 +56,7 @@ use utoipa::{Modify, OpenApi};
         modules::health::dtos::HealthData,
         modules::health::dtos::DbHealth,
         // ================================
-        
+
         // ==== Auth ====
         modules::auth::dtos::RegisterRequest,
         modules::auth::dtos::LoginRequest,
@@ -70,18 +70,18 @@ use utoipa::{Modify, OpenApi};
         modules::users::models::User,
         modules::users::models::UserStatus,
         modules::users::models::UserProfile,
-        
+
         modules::users::dtos::MeResponse,
         modules::users::dtos::UpdateProfileRequest,
         modules::users::dtos::UpdateUserStatusRequest,
         modules::users::dtos::UserDetailResponse,
-        
+
         core::response::PaginatedData<modules::users::models::User>,
         core::response::ApiResponse<core::response::PaginatedData<modules::users::models::User>>,
         core::response::ApiResponse<modules::users::dtos::MeResponse>,
         core::response::ApiResponse<modules::users::dtos::UserDetailResponse>,
         // ================================
-        
+
         // ==== Roles ====
         modules::roles::dtos::CreateRoleRequest,
         modules::roles::dtos::AssignRoleRequest,
@@ -109,6 +109,7 @@ use utoipa::{Modify, OpenApi};
 
         // ==== Work Logs ====
         modules::work_logs::models::WorkLog,
+        modules::work_logs::models::WorkLogTag,
         modules::work_logs::dtos::CreateWorkLogRequest,
         modules::work_logs::dtos::WorkLogResponse,
         core::response::ApiResponse<modules::work_logs::dtos::WorkLogResponse>,
@@ -119,7 +120,8 @@ use utoipa::{Modify, OpenApi};
         (name = "Auth", description = "Authentication & User Management") ,
         (name = "Users", description = "User Management"),
         (name = "Roles", description = "Role Management"),
-        (name = "Properties", description = "Property Type and Option Management")
+        (name = "Properties", description = "Property Type and Option Management"),
+        (name = "Work Logs", description = "Work Log Management")
     ),
     modifiers(&SecurityAddon)
 )]
