@@ -29,7 +29,7 @@ use crate::{
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn get_work_logs(
+pub async fn get_all_work_logs(
     State(state): State<AppState>,
     Query(filters): Query<WorkLogFilterQuery>,
     Extension(claims): Extension<Claims>,
@@ -54,9 +54,9 @@ pub async fn get_work_logs(
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn get_work_log(
+pub async fn get_one_work_log(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    Extension(claims): Extension<Claims>,
     Path(work_log_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<WorkLogResponse>>), AppError> {
     let mut conn = state
@@ -64,8 +64,7 @@ pub async fn get_work_log(
         .get()
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
-    let work_log = WorkLogService::find_one_work_log(&mut conn, work_log_id)
-        .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
+    let work_log = WorkLogService::find_one_work_log(&mut conn, work_log_id, claims.sub)?;
 
     Ok((
         StatusCode::OK,

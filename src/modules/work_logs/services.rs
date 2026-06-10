@@ -51,9 +51,14 @@ impl WorkLogService {
     pub fn find_one_work_log(
         conn: &mut PgConnection,
         work_log_id: Uuid,
+        user_id: Uuid,
     ) -> Result<WorkLogResponse, AppError> {
         let work_log = WorkLogRepository::find_one_work_log(conn, work_log_id)
             .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
+        if user_id != work_log.user_id {
+            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Work Log นี้".to_string()));
+        }
+
         let work_log_tags =
             WorkLogRepository::find_work_log_tags(conn, work_log.id).map_err(|_| {
                 AppError::InternalServerError("Failed to find work log tags".to_string())
@@ -127,6 +132,12 @@ impl WorkLogService {
         user_id: Uuid,
         work_log_id: Uuid,
     ) -> Result<WorkLogResponse, AppError> {
+        let find_work_log = WorkLogRepository::find_one_work_log(conn, work_log_id)
+            .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
+        if user_id != find_work_log.user_id {
+            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Work Log นี้".to_string()));
+        }
+
         conn.transaction::<WorkLogResponse, AppError, _>(|conn| {
             let new_work_log = NewWorkLog {
                 user_id,

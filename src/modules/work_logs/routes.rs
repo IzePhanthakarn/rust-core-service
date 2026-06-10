@@ -6,11 +6,11 @@ pub fn work_logs_routes() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            get(handlers::get_work_logs).post(handlers::create_work_log),
+            get(handlers::get_all_work_logs).post(handlers::create_work_log),
         )
         .route(
             "/{work_log_id}",
-            get(handlers::get_work_log)
+            get(handlers::get_one_work_log)
                 .put(handlers::update_work_log)
                 .delete(handlers::delete_work_log),
         )
