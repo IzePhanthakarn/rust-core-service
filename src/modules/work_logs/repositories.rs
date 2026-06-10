@@ -4,6 +4,7 @@ use crate::{
 };
 use diesel::prelude::*;
 use diesel::{PgConnection, QueryResult, SelectableHelper};
+use uuid::Uuid;
 
 pub struct WorkLogRepository;
 
@@ -30,5 +31,21 @@ impl WorkLogRepository {
             .values(tags)
             .returning(WorkLogTag::as_returning())
             .get_results(conn)
+    }
+
+    pub fn delete_work_log_tags(conn: &mut PgConnection, work_log_id: Uuid) -> QueryResult<usize> {
+        diesel::delete(work_log_tags::table.filter(work_log_tags::log_id.eq(work_log_id)))
+            .execute(conn)
+    }
+
+    pub fn update_work_log(
+        conn: &mut PgConnection,
+        work_log_id: Uuid,
+        work_log: &NewWorkLog<'_>,
+    ) -> QueryResult<WorkLog> {
+        diesel::update(work_logs::table.filter(work_logs::id.eq(work_log_id)))
+            .set(work_log)
+            .returning(WorkLog::as_returning())
+            .get_result(conn)
     }
 }

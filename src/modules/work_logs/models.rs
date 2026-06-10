@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use diesel::{Selectable, deserialize::Queryable, prelude::Insertable};
+use diesel::{Selectable, deserialize::Queryable, prelude::Insertable, query_builder::AsChangeset};
 use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -30,7 +30,7 @@ pub struct WorkLogTag {
     pub work_tag: String,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, AsChangeset)]
 #[diesel(table_name = work_logs)]
 pub struct NewWorkLog<'a> {
     pub user_id: Uuid,
