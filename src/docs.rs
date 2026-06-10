@@ -42,8 +42,11 @@ use utoipa::{Modify, OpenApi};
         modules::properties::handlers::delete_property_option,
 
         // Work Logs Routes
+        modules::work_logs::handlers::get_work_logs,
+        modules::work_logs::handlers::get_work_log,
         modules::work_logs::handlers::create_work_log,
-        modules::work_logs::handlers::update_work_log
+        modules::work_logs::handlers::update_work_log,
+        modules::work_logs::handlers::delete_work_log
     ),
     components(schemas(
         // ==== Common Response Schemas ===

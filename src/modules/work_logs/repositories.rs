@@ -1,14 +1,103 @@
 use crate::{
-    modules::work_logs::models::{NewWorkLog, NewWorkLogTag, WorkLog, WorkLogTag},
+    modules::work_logs::{
+        dtos::WorkLogResponse,
+        models::{NewWorkLog, NewWorkLogTag, WorkLog, WorkLogTag},
+    },
     schema::{work_log_tags, work_logs},
 };
+use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel::{PgConnection, QueryResult, SelectableHelper};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub struct WorkLogRepository;
 
 impl WorkLogRepository {
+    pub fn find_all_work_logs(
+        conn: &mut PgConnection,
+        page: i64,
+        limit: i64,
+        user_id: Uuid,
+        title: Option<String>,
+        start_date: Option<DateTime<Utc>>,
+        end_date: Option<DateTime<Utc>>,
+    ) -> QueryResult<(Vec<WorkLogResponse>, i64)> {
+        let offset = (page - 1) * limit;
+
+        let mut data_query = work_logs::table
+            .filter(work_logs::user_id.eq(user_id))
+            .into_boxed();
+        let mut count_query = work_logs::table
+            .filter(work_logs::user_id.eq(user_id))
+            .into_boxed();
+
+        if let Some(title_text) = title {
+            let search_pattern = format!("%{}%", title_text);
+            data_query = data_query.filter(work_logs::title.ilike(search_pattern.clone()));
+            count_query = count_query.filter(work_logs::title.ilike(search_pattern));
+        }
+
+        if let Some(start_date) = start_date {
+            data_query = data_query.filter(work_logs::created_at.ge(start_date));
+            count_query = count_query.filter(work_logs::created_at.ge(start_date));
+        }
+
+        if let Some(end_date) = end_date {
+            data_query = data_query.filter(work_logs::created_at.le(end_date));
+            count_query = count_query.filter(work_logs::created_at.le(end_date));
+        }
+
+        let work_logs = data_query
+            .order_by(work_logs::created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .select(WorkLog::as_select())
+            .load::<WorkLog>(conn)?;
+
+        let work_log_ids: Vec<Uuid> = work_logs.iter().map(|work_log| work_log.id).collect();
+
+        let tags = if work_log_ids.is_empty() {
+            Vec::new()
+        } else {
+            work_log_tags::table
+                .filter(work_log_tags::log_id.eq_any(&work_log_ids))
+                .select(WorkLogTag::as_select())
+                .load::<WorkLogTag>(conn)?
+        };
+
+        let mut tags_by_log_id: HashMap<Uuid, Vec<WorkLogTag>> = HashMap::new();
+        for tag in tags {
+            tags_by_log_id.entry(tag.log_id).or_default().push(tag);
+        }
+
+        let items = work_logs
+            .into_iter()
+            .map(|work_log| WorkLogResponse {
+                id: work_log.id,
+                user_id: work_log.user_id,
+                title: work_log.title,
+                content: work_log.content,
+                mood_score: work_log.mood_score,
+                productivity_score: work_log.productivity_score,
+                tags: tags_by_log_id.remove(&work_log.id).unwrap_or_default(),
+                is_draft: work_log.is_draft,
+                date_logged: work_log.date_logged,
+                created_at: work_log.created_at,
+                updated_at: work_log.updated_at,
+            })
+            .collect();
+
+        let total: i64 = count_query.count().get_result(conn)?;
+
+        Ok((items, total))
+    }
+
+    pub fn find_one_work_log(conn: &mut PgConnection, work_log_id: Uuid) -> QueryResult<WorkLog> {
+        work_logs::table
+            .filter(work_logs::id.eq(work_log_id))
+            .first(conn)
+    }
     pub fn create_work_log(
         conn: &mut PgConnection,
         work_log: &NewWorkLog<'_>,
@@ -17,6 +106,15 @@ impl WorkLogRepository {
             .values(work_log)
             .returning(WorkLog::as_returning())
             .get_result(conn)
+    }
+
+    pub fn find_work_log_tags(
+        conn: &mut PgConnection,
+        work_log_id: Uuid,
+    ) -> QueryResult<Vec<WorkLogTag>> {
+        work_log_tags::table
+            .filter(work_log_tags::log_id.eq(work_log_id))
+            .get_results(conn)
     }
 
     pub fn create_work_log_tags(
@@ -47,5 +145,9 @@ impl WorkLogRepository {
             .set(work_log)
             .returning(WorkLog::as_returning())
             .get_result(conn)
+    }
+
+    pub fn delete_work_log(conn: &mut PgConnection, work_log_id: Uuid) -> QueryResult<usize> {
+        diesel::delete(work_logs::table.filter(work_logs::id.eq(work_log_id))).execute(conn)
     }
 }

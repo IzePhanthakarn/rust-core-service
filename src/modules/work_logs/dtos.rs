@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
 
@@ -36,8 +36,35 @@ fn validate_tags(tags: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
+#[derive(Deserialize, IntoParams)]
+pub struct WorkLogFilterQuery {
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+    pub title: Option<String>,
+    pub start_date: Option<DateTime<Utc>>,
+    pub end_date: Option<DateTime<Utc>>,
+}
+
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateWorkLogRequest {
+    #[validate(custom(function = "validate_title"))]
+    pub title: String,
+    #[validate(custom(function = "validate_content"))]
+    pub content: String,
+    #[validate(range(min = 1, max = 5, message = "Mood score ต้องอยู่ระหว่าง 1-5"))]
+    pub mood_score: i32,
+    #[validate(range(min = 1, max = 5, message = "Productivity score ต้องอยู่ระหว่าง 1-5"))]
+    pub productivity_score: i32,
+    #[validate(length(max = 10, message = "Tags ต้องไม่เกิน 10 รายการ"))]
+    #[validate(custom(function = "validate_tags"))]
+    pub tags: Vec<String>,
+    pub is_draft: bool,
+    pub date_logged: DateTime<Utc>,
+}
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct UpdateWorkLogRequest {
+    pub user_id: Uuid,
     #[validate(custom(function = "validate_title"))]
     pub title: String,
     #[validate(custom(function = "validate_content"))]

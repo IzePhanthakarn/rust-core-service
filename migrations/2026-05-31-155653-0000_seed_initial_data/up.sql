@@ -5,12 +5,13 @@ INSERT INTO roles (id, name, description) VALUES
     (uuid_generate_v4(), 'user', 'General standard user');
 
 -- 2. Insert Super Admin User
--- หมายเหตุ: password_hash ด้านล่างคือคำว่า 'P@ssw0rd1234' ที่ผ่านการ Hash ด้วย Argon2
-INSERT INTO users (id, email, password_hash, status) 
+-- หมายเหตุ: password_hash ด้านล่างคือคำว่า 'P@ssw0rd' ที่ผ่านการ Hash ด้วย Argon2
+INSERT INTO users (id, email, secret_word, password_hash, status) 
 VALUES (
     'c8adb331-dcf6-47ad-ad15-066a145127b3', -- Fix ID เพื่อให้จัดการง่ายตอน Seed
     'admin@mail.com', 
-    '$argon2id$v=19$m=19456,t=2,p=1$f4JWIOoJa4kGiI79J3eY3Q$xQXRPPUyKFW5KBPTwlSaEZSC+gbHQgBsnP9/CkNWEiY', 
+    '$argon2id$v=19$m=19456,t=2,p=1$9GG5+RyHBuggbhJd32QqGQ$2pSEASAa0IWgaGkkYK7CiTDTMECyyYeHmwJdbHCXXrc', -- Jum1n0@1357
+    '$argon2id$v=19$m=19456,t=2,p=1$euZEQcAj1WztSn7tp5/E+Q$XrMOStEyPVp5lktJwA7TbPitBVZ274SnXUtKtWb1co0', -- P@ssw0rd
     'active'
 );
 
