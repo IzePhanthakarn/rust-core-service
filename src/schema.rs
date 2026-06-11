@@ -55,7 +55,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
+    use diesel::sql_types::{Timestamptz, Uuid, Varchar};
     use super::sql_types::UserProvider;
 
     social_accounts (id) {
@@ -94,7 +94,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
+    use diesel::sql_types::{Int4, Nullable, Timestamp, Timestamptz, Uuid, Varchar};
     use super::sql_types::UserStatus;
 
     users (id) {

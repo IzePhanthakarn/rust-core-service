@@ -3,6 +3,7 @@
 
 [print_schema]
 file = "src/schema.rs"
+import_types = ["diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar}"]
 custom_type_derives = ["diesel::query_builder::QueryId", "diesel::sql_types::SqlType"]
 
 [migrations_directory]
