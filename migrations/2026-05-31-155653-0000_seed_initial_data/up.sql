@@ -1,8 +1,8 @@
 -- 1. Insert Default Roles
 INSERT INTO roles (id, name, description) VALUES
-    (uuid_generate_v4(), 'super_admin', 'Supreme administrator of the system'),
-    (uuid_generate_v4(), 'admin_roles', 'Administrator for Identity and Access Management'),
-    (uuid_generate_v4(), 'user', 'General standard user');
+    ('ea56043a-abf7-4b08-808d-c04acc41850c', 'super_admin', 'Supreme administrator of the system'),
+    ('38097a11-9ea3-443e-b7df-477826e7d348', 'admin_roles', 'Administrator for Identity and Access Management'),
+    ('1e67fab9-184c-4563-b0e5-c78053a59e95', 'user', 'General standard user');
 
 -- 2. Insert Super Admin User
 -- หมายเหตุ: password_hash ด้านล่างคือคำว่า 'P@ssw0rd' ที่ผ่านการ Hash ด้วย Argon2
@@ -16,9 +16,9 @@ VALUES (
 );
 
 -- 3. Assign super_admin role to the user
-INSERT INTO user_roles (user_id, role_id)
-SELECT 'c8adb331-dcf6-47ad-ad15-066a145127b3', id FROM roles WHERE name = 'super_admin';
-
+INSERT INTO user_roles (user_id, role_id) VALUES 
+    ('c8adb331-dcf6-47ad-ad15-066a145127b3', 'ea56043a-abf7-4b08-808d-c04acc41850c'),
+    ('38097a11-9ea3-443e-b7df-477826e7d348', 'ea56043a-abf7-4b08-808d-c04acc41850c');
 -- 4. Create Profile for Super Admin
 INSERT INTO user_profiles (user_id, first_name, last_name)
 VALUES ('c8adb331-dcf6-47ad-ad15-066a145127b3', 'Admin', 'Core');
