@@ -14,7 +14,7 @@ mod docs;
 mod modules;
 mod schema;
 
-const API_PREFIX: &str = "/core/v1";
+const API_PREFIX: &str = "/v1";
 
 #[derive(Clone)]
 pub struct AppState {

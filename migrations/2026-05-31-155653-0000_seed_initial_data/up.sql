@@ -18,7 +18,8 @@ VALUES (
 -- 3. Assign super_admin role to the user
 INSERT INTO user_roles (user_id, role_id) VALUES 
     ('c8adb331-dcf6-47ad-ad15-066a145127b3', 'ea56043a-abf7-4b08-808d-c04acc41850c'),
-    ('38097a11-9ea3-443e-b7df-477826e7d348', 'ea56043a-abf7-4b08-808d-c04acc41850c');
+    ('c8adb331-dcf6-47ad-ad15-066a145127b3', '38097a11-9ea3-443e-b7df-477826e7d348');
+
 -- 4. Create Profile for Super Admin
 INSERT INTO user_profiles (user_id, first_name, last_name)
 VALUES ('c8adb331-dcf6-47ad-ad15-066a145127b3', 'Admin', 'Core');

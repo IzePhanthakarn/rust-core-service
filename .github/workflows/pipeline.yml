@@ -1,11 +1,12 @@
-name: Rust Analysis Pipeline
+name: Rust CI/CD Pipeline to GCP
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  lint:
+  # 1. Job ตรวจสอบและสแกนโค้ด (เปลี่ยนชื่อจาก lint)
+  code-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +21,69 @@ jobs:
           PQ_LIB_DIR: /usr/lib/x86_64-linux-gnu
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        uses: SonarSource/sonarqube-scan-action@v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PQ_LIB_DIR: /usr/lib/x86_64-linux-gnu
+
+  # 2. Job สำหรับ Build และ Push Container Image
+  build-and-push:
+    needs: code-quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup GCloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker client
+        run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_TAG=asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/rust-apps/core-api:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+
+  # 3. Job สำหรับการทำ Database Migration ก่อนเริ่มใช้โค้ดจริง
+  migration:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup GCloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      # สั่งให้ Cloud Run Job ไปเปิดคอนเทนเนอร์ตัวใหม่รันคำสั่ง Migration
+      - name: Run Database Migration
+        run: |
+          gcloud run jobs execute rust-migration-job \
+            --region asia-southeast1 \
+            --image asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/rust-apps/core-api:${{ github.sha }} \
+            --wait
+
+  # 4. Job ด่านสุดท้าย สั่งอัปเดตระบบจริงบน Cloud Run
+  deploy:
+    needs: migration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: rust-core-service
+          image: asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/rust-apps/core-api:${{ github.sha }}
+          region: asia-southeast1

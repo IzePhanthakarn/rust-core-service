@@ -36,3 +36,9 @@ validator = { version = "0.20.0", features = ["derive"] }
 rand_core = { version = "0.6", features = ["std"] }
 tower = { version = "0.5.3", features = ["util"] }
 log = "0.4.32"
+
+[profile.release]
+opt-level = 3     # [สำคัญสุด] เปลี่ยนกลับเป็น 3 เพื่อรีด Performance ความเร็วสูงสุด
+strip = true      # ตัด Debug symbols ทิ้ง (ลดขนาดไฟล์มหาศาล โดยไม่กระทบความเร็ว)
+lto = true        # Link-Time Optimization (ลดขนาดไฟล์ + ทำให้โค้ดทำงาน "เร็วขึ้น" ด้วย)
+codegen-units = 1 # ยอมให้ Build ช้าลง เพื่อให้ Compiler เห็นโค้ดทั้งหมดและ Optimize ได้ดีที่สุด

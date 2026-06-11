@@ -11,6 +11,8 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     property_options (id) {
         id -> Uuid,
         property_type_id -> Uuid,
@@ -27,6 +29,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     property_types (id) {
         id -> Uuid,
         #[max_length = 100]
@@ -43,6 +47,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     roles (id) {
         id -> Uuid,
         #[max_length = 50]
@@ -55,7 +61,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::{Timestamptz, Uuid, Varchar};
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
     use super::sql_types::UserProvider;
 
     social_accounts (id) {
@@ -69,6 +75,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     user_profiles (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -85,6 +93,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     user_roles (user_id, role_id) {
         user_id -> Uuid,
         role_id -> Uuid,
@@ -94,7 +104,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::{Int4, Nullable, Timestamp, Timestamptz, Uuid, Varchar};
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
     use super::sql_types::UserStatus;
 
     users (id) {
@@ -114,6 +124,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     work_log_tags (log_id, work_tag) {
         log_id -> Uuid,
         #[max_length = 50]
@@ -122,6 +134,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     work_logs (id) {
         id -> Uuid,
         user_id -> Uuid,
