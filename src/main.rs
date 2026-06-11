@@ -14,6 +14,8 @@ mod docs;
 mod modules;
 mod schema;
 
+const API_PREFIX: &str = "/core/v1";
+
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: config::database::DbPool,
@@ -45,7 +47,7 @@ async fn main() {
         ])
         .allow_headers(tower_http::cors::Any);
 
-    let app = Router::new()
+    let api_routes = Router::new()
         .route("/health", get(modules::health::handlers::health_check))
         .nest("/auth", modules::auth::routes::auth_routes())
         .nest("/users", modules::users::routes::user_routes())
@@ -55,7 +57,10 @@ async fn main() {
         )
         // ปรับให้ไม่มี /api เหมือนเส้นอื่นๆ จะได้เข้าผ่าน /roles/... ได้เลย
         .nest("/roles", modules::roles::routes::role_routes())
-        .nest("/work-logs", modules::work_logs::routes::work_logs_routes())
+        .nest("/work-logs", modules::work_logs::routes::work_logs_routes());
+
+    let app = Router::new()
+        .nest(API_PREFIX, api_routes)
         .merge(Scalar::with_url("/docs", ApiDoc::openapi()))
         .with_state(state)
         .layer(cors);

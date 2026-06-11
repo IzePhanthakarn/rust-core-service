@@ -127,6 +127,9 @@ use utoipa::{Modify, OpenApi};
         (name = "Properties", description = "Property Type and Option Management"),
         (name = "Work Logs", description = "Work Log Management")
     ),
+    servers(
+        (url = "/core/v1", description = "Core API v1")
+    ),
     modifiers(&SecurityAddon)
 )]
 pub struct ApiDoc;
