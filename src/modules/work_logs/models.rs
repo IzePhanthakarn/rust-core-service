@@ -16,7 +16,6 @@ pub struct WorkLog {
     pub content: String,
     pub mood_score: i32,
     pub productivity_score: i32,
-    pub is_draft: bool,
     pub date_logged: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -38,7 +37,6 @@ pub struct NewWorkLog<'a> {
     pub content: &'a str,
     pub mood_score: i32,
     pub productivity_score: i32,
-    pub is_draft: bool,
     pub date_logged: DateTime<Utc>,
 }
 

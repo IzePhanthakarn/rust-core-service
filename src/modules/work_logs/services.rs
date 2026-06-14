@@ -33,8 +33,8 @@ impl WorkLogService {
             limit,
             user_id,
             filters.title,
-            filters.start_date,
-            filters.end_date,
+            filters.month,
+            filters.year,
         )
         .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
@@ -71,7 +71,6 @@ impl WorkLogService {
             content: work_log.content,
             mood_score: work_log.mood_score,
             productivity_score: work_log.productivity_score,
-            is_draft: work_log.is_draft,
             date_logged: work_log.date_logged,
             created_at: work_log.created_at,
             updated_at: work_log.updated_at,
@@ -93,7 +92,6 @@ impl WorkLogService {
                 content: work_log.content.trim(),
                 mood_score: work_log.mood_score,
                 productivity_score: work_log.productivity_score,
-                is_draft: work_log.is_draft,
                 date_logged: work_log.date_logged,
             };
 
@@ -118,7 +116,6 @@ impl WorkLogService {
                 mood_score: saved_log.mood_score,
                 productivity_score: saved_log.productivity_score,
                 tags,
-                is_draft: saved_log.is_draft,
                 date_logged: saved_log.date_logged,
                 created_at: saved_log.created_at,
                 updated_at: saved_log.updated_at,
@@ -145,7 +142,6 @@ impl WorkLogService {
                 content: work_log.content.trim(),
                 mood_score: work_log.mood_score,
                 productivity_score: work_log.productivity_score,
-                is_draft: work_log.is_draft,
                 date_logged: work_log.date_logged,
             };
 
@@ -172,7 +168,6 @@ impl WorkLogService {
                 mood_score: saved_log.mood_score,
                 productivity_score: saved_log.productivity_score,
                 tags,
-                is_draft: saved_log.is_draft,
                 date_logged: saved_log.date_logged,
                 created_at: saved_log.created_at,
                 updated_at: saved_log.updated_at,

@@ -41,8 +41,8 @@ pub struct WorkLogFilterQuery {
     pub page: Option<i64>,
     pub limit: Option<i64>,
     pub title: Option<String>,
-    pub start_date: Option<DateTime<Utc>>,
-    pub end_date: Option<DateTime<Utc>>,
+    pub month: Option<String>,
+    pub year: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
@@ -58,7 +58,6 @@ pub struct CreateWorkLogRequest {
     #[validate(length(max = 10, message = "Tags ต้องไม่เกิน 10 รายการ"))]
     #[validate(custom(function = "validate_tags"))]
     pub tags: Vec<String>,
-    pub is_draft: bool,
     pub date_logged: DateTime<Utc>,
 }
 
@@ -76,7 +75,6 @@ pub struct UpdateWorkLogRequest {
     #[validate(length(max = 10, message = "Tags ต้องไม่เกิน 10 รายการ"))]
     #[validate(custom(function = "validate_tags"))]
     pub tags: Vec<String>,
-    pub is_draft: bool,
     pub date_logged: DateTime<Utc>,
 }
 
@@ -89,7 +87,6 @@ pub struct WorkLogResponse {
     pub mood_score: i32,
     pub productivity_score: i32,
     pub tags: Vec<WorkLogTag>,
-    pub is_draft: bool,
     pub date_logged: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

@@ -125,7 +125,6 @@ diesel::table! {
         content -> Text,
         mood_score -> Int4,
         productivity_score -> Int4,
-        is_draft -> Bool,
         date_logged -> Timestamptz,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,

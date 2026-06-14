@@ -5,7 +5,7 @@ use crate::{
     },
     schema::{work_log_tags, work_logs},
 };
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use diesel::prelude::*;
 use diesel::{PgConnection, QueryResult, SelectableHelper};
 use std::collections::HashMap;
@@ -20,8 +20,8 @@ impl WorkLogRepository {
         limit: i64,
         user_id: Uuid,
         title: Option<String>,
-        start_date: Option<DateTime<Utc>>,
-        end_date: Option<DateTime<Utc>>,
+        month: Option<String>,
+        year: Option<String>,
     ) -> QueryResult<(Vec<WorkLogResponse>, i64)> {
         let offset = (page - 1) * limit;
 
@@ -38,14 +38,15 @@ impl WorkLogRepository {
             count_query = count_query.filter(work_logs::title.ilike(search_pattern));
         }
 
-        if let Some(start_date) = start_date {
-            data_query = data_query.filter(work_logs::created_at.ge(start_date));
-            count_query = count_query.filter(work_logs::created_at.ge(start_date));
-        }
-
-        if let Some(end_date) = end_date {
-            data_query = data_query.filter(work_logs::created_at.le(end_date));
-            count_query = count_query.filter(work_logs::created_at.le(end_date));
+        if let Some((start_date, end_date)) =
+            Self::month_year_range(month.as_deref(), year.as_deref())
+        {
+            data_query = data_query
+                .filter(work_logs::date_logged.ge(start_date))
+                .filter(work_logs::date_logged.lt(end_date));
+            count_query = count_query
+                .filter(work_logs::date_logged.ge(start_date))
+                .filter(work_logs::date_logged.lt(end_date));
         }
 
         let work_logs = data_query
@@ -81,7 +82,6 @@ impl WorkLogRepository {
                 mood_score: work_log.mood_score,
                 productivity_score: work_log.productivity_score,
                 tags: tags_by_log_id.remove(&work_log.id).unwrap_or_default(),
-                is_draft: work_log.is_draft,
                 date_logged: work_log.date_logged,
                 created_at: work_log.created_at,
                 updated_at: work_log.updated_at,
@@ -149,5 +149,30 @@ impl WorkLogRepository {
 
     pub fn delete_work_log(conn: &mut PgConnection, work_log_id: Uuid) -> QueryResult<usize> {
         diesel::delete(work_logs::table.filter(work_logs::id.eq(work_log_id))).execute(conn)
+    }
+
+    fn month_year_range(
+        month: Option<&str>,
+        year: Option<&str>,
+    ) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
+        let month = month?.parse::<u32>().ok()?;
+        let year = year?.parse::<i32>().ok()?;
+
+        if !(1..=12).contains(&month) {
+            return None;
+        }
+
+        let (next_year, next_month) = if month == 12 {
+            (year + 1, 1)
+        } else {
+            (year, month + 1)
+        };
+
+        let start_date = Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0).single()?;
+        let end_date = Utc
+            .with_ymd_and_hms(next_year, next_month, 1, 0, 0, 0)
+            .single()?;
+
+        Some((start_date, end_date))
     }
 }

@@ -23,6 +23,7 @@ use crate::{
     get,
     path = "/work-logs",
     tag = "Work Logs",
+    params(WorkLogFilterQuery),
     security(("bearerAuth" = [])),
     responses(
         (status = 200, description = "Work logs found successfully", body = ApiResponse<PaginatedData<WorkLogResponse>>),
