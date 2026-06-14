@@ -110,7 +110,7 @@ pub async fn create_work_log(
     put,
     path = "/work-logs/{work_log_id}",
     tag = "Work Logs",
-    request_body = CreateWorkLogRequest,
+    request_body = UpdateWorkLogRequest,
     security(("bearerAuth" = [])),
     responses(
         (status = 200, description = "Work log updated successfully", body = WorkLogResponse),
