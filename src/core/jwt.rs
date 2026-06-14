@@ -11,15 +11,25 @@ pub struct Claims {
     pub exp: usize,         // เวลาหมดอายุ (Timestamp)
     pub iat: usize,         // เวลาที่สร้าง Token (Timestamp)
     pub token_version: i32, // สำหรับทำ Force Logout
-    pub roles: Vec<String>, // Role ของ User
+    pub role: String,       // Role ของ User
     pub token_type: String, // แยกประเภท Access / Refresh
+}
+
+impl Claims {
+    pub fn is_super_admin(&self) -> bool {
+        self.role == "super_admin"
+    }
+
+    pub fn is_admin(&self) -> bool {
+        matches!(self.role.as_str(), "super_admin" | "admin")
+    }
 }
 
 // ฟังก์ชันสร้างทั้ง Access และ Refresh Token คืนค่าเป็น Tuple (access, refresh)
 pub fn generate_tokens(
     user_id: Uuid,
     token_version: i32,
-    roles: Vec<String>,
+    role: String,
 ) -> Result<(String, String), jsonwebtoken::errors::Error> {
     let now = Utc::now();
 
@@ -30,7 +40,7 @@ pub fn generate_tokens(
         exp: access_exp.timestamp() as usize,
         iat: now.timestamp() as usize,
         token_version,
-        roles: roles.clone(),
+        role: role.clone(),
         token_type: "access".to_string(),
     };
 
@@ -48,7 +58,7 @@ pub fn generate_tokens(
         exp: refresh_exp.timestamp() as usize,
         iat: now.timestamp() as usize,
         token_version,
-        roles, // แนบ Role ไปด้วยเพื่อใช้ออก Access Token ใหม่ได้เลย
+        role,
         token_type: "refresh".to_string(),
     };
 

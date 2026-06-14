@@ -3,7 +3,7 @@ use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::modules::users::models::UserStatus; // ดึง Enum มาจาก models
+use crate::modules::users::models::{UserRole, UserStatus}; // ดึง Enum มาจาก models
 
 #[derive(Serialize, ToSchema)]
 pub struct MeResponse {
@@ -11,7 +11,7 @@ pub struct MeResponse {
     pub email: String,
     pub first_name: String,
     pub last_name: String,
-    pub roles: Vec<String>,
+    pub role: UserRole,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
@@ -35,7 +35,7 @@ pub struct UserDetailResponse {
     pub first_name: String,
     pub last_name: String,
     pub status: UserStatus,
-    pub roles: Vec<String>,
+    pub role: UserRole,
 }
 
 #[derive(Deserialize, IntoParams)]

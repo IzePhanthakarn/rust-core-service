@@ -12,17 +12,14 @@ use crate::{
         jwt::Claims,
         response::{ApiResponse, EmptyData, PaginatedData},
     },
-    modules::{
-        roles::repositories::RoleRepository,
-        users::{
-            dtos::{
-                MeResponse, UpdateProfileRequest, UpdateUserStatusRequest, UserDetailResponse,
-                UserFilterQuery,
-            },
-            models::User,
-            repositories::UserRepository,
-            services::UserService,
+    modules::users::{
+        dtos::{
+            MeResponse, UpdateProfileRequest, UpdateUserStatusRequest, UserDetailResponse,
+            UserFilterQuery,
         },
+        models::User,
+        repositories::UserRepository,
+        services::UserService,
     },
 };
 
@@ -41,13 +38,7 @@ pub async fn get_users(
     Query(filters): Query<UserFilterQuery>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<PaginatedData<User>>>, AppError> {
-    let allowed_roles = ["super_admin", "admin_roles"];
-    let has_permission = claims
-        .roles
-        .iter()
-        .any(|role| allowed_roles.contains(&role.as_str()));
-
-    if !has_permission {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้".to_string()));
     }
 
@@ -80,15 +71,12 @@ pub async fn get_me(
     let (user, profile) = UserRepository::get_user_with_profile(&mut conn, claims.sub)
         .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งาน".to_string()))?;
 
-    // เรียกข้ามไปใช้ RoleRepository ที่เราแยกไว้
-    let roles = RoleRepository::get_user_roles(&mut conn, claims.sub).unwrap_or_default();
-
     let data = MeResponse {
         id: user.id,
         email: user.email.unwrap_or_default(),
         first_name: profile.first_name,
         last_name: profile.last_name,
-        roles,
+        role: user.role,
     };
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลส่วนตัวสำเร็จ", data)))
@@ -122,14 +110,12 @@ pub async fn update_me(
     let (user, _) = UserRepository::get_user_with_profile(&mut conn, claims.sub)
         .map_err(|_| AppError::BadRequest("ไม่พบบัญชีผู้ใช้งานของคุณในระบบ".to_string()))?;
 
-    let roles = RoleRepository::get_user_roles(&mut conn, claims.sub).unwrap_or_default();
-
     let data = MeResponse {
         id: user.id,
         email: user.email.unwrap_or_default(),
         first_name: updated_profile.first_name,
         last_name: updated_profile.last_name,
-        roles,
+        role: user.role,
     };
 
     Ok(Json(ApiResponse::success(
@@ -160,9 +146,7 @@ pub async fn update_user_status(
     Path(target_user_id): Path<Uuid>,
     ValidatedJson(payload): ValidatedJson<UpdateUserStatusRequest>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เปลี่ยนสถานะผู้ใช้งาน".to_string()));
     }
 
@@ -205,9 +189,7 @@ pub async fn get_user_by_id(
     Extension(claims): Extension<Claims>,
     Path(target_user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserDetailResponse>>, AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้อื่น".to_string()));
     }
 
@@ -219,15 +201,13 @@ pub async fn get_user_by_id(
     let (user, profile) = UserRepository::get_user_with_profile(&mut conn, target_user_id)
         .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งานนี้ในระบบ".to_string()))?;
 
-    let roles = RoleRepository::get_user_roles(&mut conn, target_user_id).unwrap_or_default();
-
     let data = UserDetailResponse {
         id: user.id,
         email: user.email.unwrap_or_default(),
         first_name: profile.first_name,
         last_name: profile.last_name,
         status: user.status,
-        roles,
+        role: user.role,
     };
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลผู้ใช้งานสำเร็จ", data)))
@@ -252,8 +232,7 @@ pub async fn delete_user_by_id(
     Extension(claims): Extension<Claims>,
     Path(target_user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
-    let is_super_admin = claims.roles.contains(&"super_admin".to_string());
-    if !is_super_admin {
+    if !claims.is_super_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบบัญชีผู้ใช้งาน".to_string()));
     }
 

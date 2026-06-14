@@ -6,11 +6,8 @@ use crate::modules::auth::dtos::{
 };
 use crate::modules::auth::repositories::AuthRepository;
 use crate::modules::users::models::UserStatus;
-
-// === อัปเดต Imports ใหม่ให้ดึง RoleRepository และ UserService เข้ามาด้วย ===
 use crate::modules::{
     auth::dtos::RegisterRequest,
-    roles::repositories::RoleRepository,
     users::{models::NewUser, repositories::UserRepository, services::UserService},
 };
 use diesel::PgConnection;
@@ -74,14 +71,10 @@ impl AuthService {
             return Err(AppError::BadRequest("อีเมลหรือรหัสผ่านไม่ถูกต้อง".to_string()));
         }
 
-        // 4. ดึง Roles ทั้งหมดของ User (เปลี่ยนมาเรียกใช้ RoleRepository)
-        let roles = RoleRepository::get_user_roles(conn, user.id).map_err(|_| {
-            AppError::InternalServerError("ไม่สามารถดึงข้อมูลสิทธิ์การใช้งานได้".to_string())
-        })?;
-
-        // 5. ออก JWT Tokens
-        let (access_token, refresh_token) = generate_tokens(user.id, user.token_version, roles)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Token ได้".to_string()))?;
+        // 4. ออก JWT Tokens พร้อม Role ปัจจุบันของ User
+        let (access_token, refresh_token) =
+            generate_tokens(user.id, user.token_version, user.role.as_str().to_string())
+                .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Token ได้".to_string()))?;
 
         Ok(AuthResponse {
             access_token,
@@ -123,12 +116,10 @@ impl AuthService {
             ));
         }
 
-        // 6. ดึง Roles ใหม่ล่าสุดจาก DB (เปลี่ยนมาเรียกใช้ RoleRepository)
-        let roles = RoleRepository::get_user_roles(conn, user.id).unwrap_or_default();
-
-        // 7. ออก Token คู่ใหม่
-        let (access_token, refresh_token) = generate_tokens(user.id, user.token_version, roles)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Token ได้".to_string()))?;
+        // 6. ออก Token คู่ใหม่พร้อม Role ล่าสุดจาก DB
+        let (access_token, refresh_token) =
+            generate_tokens(user.id, user.token_version, user.role.as_str().to_string())
+                .map_err(|_| AppError::InternalServerError("ไม่สามารถสร้าง Token ได้".to_string()))?;
 
         Ok(AuthResponse {
             access_token,

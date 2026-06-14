@@ -15,6 +15,24 @@ pub enum UserStatus {
     Inactive,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, diesel_derive_enum::DbEnum, ToSchema)]
+#[ExistingTypePath = "crate::schema::sql_types::UserRole"]
+pub enum UserRole {
+    SuperAdmin,
+    Admin,
+    User,
+}
+
+impl UserRole {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::SuperAdmin => "super_admin",
+            Self::Admin => "admin",
+            Self::User => "user",
+        }
+    }
+}
+
 #[derive(Queryable, Selectable, Serialize, Debug, Clone, ToSchema)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -25,6 +43,7 @@ pub struct User {
     pub secret_word: Option<String>,
     #[serde(skip_serializing)]
     pub password_hash: Option<String>,
+    pub role: UserRole,
     pub status: UserStatus,
     pub token_version: i32,
     pub created_at: NaiveDateTime,

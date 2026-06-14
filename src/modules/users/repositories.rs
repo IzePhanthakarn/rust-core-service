@@ -1,6 +1,5 @@
-use crate::modules::roles::models::NewUserRole;
 use crate::modules::users::models::{NewUser, NewUserProfile, User, UserProfile, UserStatus};
-use crate::schema::{roles, user_profiles, user_roles, users};
+use crate::schema::{user_profiles, users};
 use diesel::prelude::*;
 use uuid::Uuid;
 
@@ -32,20 +31,6 @@ impl UserRepository {
             };
             diesel::insert_into(user_profiles::table)
                 .values(&new_profile)
-                .execute(conn)?;
-
-            let default_role_id: Uuid = roles::table
-                .filter(roles::name.eq("user"))
-                .select(roles::id)
-                .first(conn)?;
-
-            let new_user_role = NewUserRole {
-                user_id: inserted_user.id,
-                role_id: default_role_id,
-                assigned_by: None,
-            };
-            diesel::insert_into(user_roles::table)
-                .values(&new_user_role)
                 .execute(conn)?;
 
             Ok(inserted_user)

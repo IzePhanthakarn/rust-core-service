@@ -55,8 +55,6 @@ async fn main() {
             "/properties",
             modules::properties::routes::property_routes(),
         )
-        // ปรับให้ไม่มี /api เหมือนเส้นอื่นๆ จะได้เข้าผ่าน /roles/... ได้เลย
-        .nest("/roles", modules::roles::routes::role_routes())
         .nest("/work-logs", modules::work_logs::routes::work_logs_routes());
 
     let app = Router::new()

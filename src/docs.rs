@@ -25,12 +25,6 @@ use utoipa::{Modify, OpenApi};
         modules::users::handlers::delete_user_by_id,
         modules::users::handlers::get_user_by_id,
 
-        // Roles Routes (ย้ายมาเรียกผ่าน module roles)
-        modules::roles::handlers::get_roles,
-        modules::roles::handlers::create_role,
-        modules::roles::handlers::assign_role,
-        modules::roles::handlers::revoke_role,
-
         // Properties Routes
         modules::properties::handlers::get_all_property_type,
         modules::properties::handlers::get_one_property_type,
@@ -73,6 +67,7 @@ use utoipa::{Modify, OpenApi};
         // ==== Users ====
         modules::users::models::User,
         modules::users::models::UserStatus,
+        modules::users::models::UserRole,
         modules::users::models::UserProfile,
 
         modules::users::dtos::MeResponse,
@@ -84,14 +79,6 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<core::response::PaginatedData<modules::users::models::User>>,
         core::response::ApiResponse<modules::users::dtos::MeResponse>,
         core::response::ApiResponse<modules::users::dtos::UserDetailResponse>,
-        // ================================
-
-        // ==== Roles ====
-        modules::roles::dtos::CreateRoleRequest,
-        modules::roles::dtos::AssignRoleRequest,
-        modules::roles::dtos::RevokeRoleRequest,
-        modules::roles::models::Role,
-        core::response::ApiResponse<Vec<modules::roles::models::Role>>,
         // ================================
 
         // ==== Properties ====
@@ -123,7 +110,6 @@ use utoipa::{Modify, OpenApi};
         (name = "System Health", description = "Endpoints for monitoring server status"),
         (name = "Auth", description = "Authentication & User Management") ,
         (name = "Users", description = "User Management"),
-        (name = "Roles", description = "Role Management"),
         (name = "Properties", description = "Property Type and Option Management"),
         (name = "Work Logs", description = "Work Log Management")
     ),

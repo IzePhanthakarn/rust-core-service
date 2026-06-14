@@ -6,6 +6,10 @@ pub mod sql_types {
     pub struct UserProvider;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "user_role"))]
+    pub struct UserRole;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "user_status"))]
     pub struct UserStatus;
 }
@@ -48,20 +52,6 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
-
-    roles (id) {
-        id -> Uuid,
-        #[max_length = 50]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        created_at -> Timestamptz,
-        updated_at -> Timestamptz,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
     use super::sql_types::UserProvider;
 
     social_accounts (id) {
@@ -94,17 +84,7 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
-
-    user_roles (user_id, role_id) {
-        user_id -> Uuid,
-        role_id -> Uuid,
-        assigned_by -> Nullable<Uuid>,
-        created_at -> Timestamptz,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+    use super::sql_types::UserRole;
     use super::sql_types::UserStatus;
 
     users (id) {
@@ -115,6 +95,7 @@ diesel::table! {
         secret_word -> Nullable<Varchar>,
         #[max_length = 255]
         password_hash -> Nullable<Varchar>,
+        role -> UserRole,
         status -> UserStatus,
         token_version -> Int4,
         created_at -> Timestamptz,
@@ -155,17 +136,14 @@ diesel::joinable!(property_options -> property_types (property_type_id));
 diesel::joinable!(property_options -> users (created_by));
 diesel::joinable!(social_accounts -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
-diesel::joinable!(user_roles -> roles (role_id));
 diesel::joinable!(work_log_tags -> work_logs (log_id));
 diesel::joinable!(work_logs -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     property_options,
     property_types,
-    roles,
     social_accounts,
     user_profiles,
-    user_roles,
     users,
     work_log_tags,
     work_logs,

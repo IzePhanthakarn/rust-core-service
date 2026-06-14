@@ -40,9 +40,7 @@ pub async fn get_all_property_type(
     Query(filters): Query<PropertyFilterQuery>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<PaginatedData<PropertyTypeData>>>, AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Property".to_string()));
     }
 
@@ -73,9 +71,7 @@ pub async fn get_one_property_type(
     Extension(claims): Extension<Claims>,
     Path(property_type_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<PropertyResponse>>, AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Property".to_string()));
     }
 
@@ -110,9 +106,7 @@ pub async fn create_property_type(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<CreatePropertyTypeRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<PropertyType>>), AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Property".to_string()));
     }
 
@@ -156,9 +150,7 @@ pub async fn update_property_type(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<UpdatePropertyTypeRequest>,
 ) -> Result<Json<ApiResponse<PropertyType>>, AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Property".to_string()));
     }
 
@@ -199,9 +191,7 @@ pub async fn delete_property_type(
     Extension(claims): Extension<Claims>,
     Path(property_type_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ Property".to_string()));
     }
 
@@ -238,9 +228,7 @@ pub async fn create_property_option(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<CreatePropertyOptionRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<PropertyOption>>), AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden(
             "คุณไม่มีสิทธิ์สร้าง Property Option".to_string(),
         ));
@@ -287,9 +275,7 @@ pub async fn update_property_option_status(
     Path(property_option_id): Path<Uuid>,
     Json(payload): Json<UpdateStatusRequest>, // รับค่า true/false มาจากตรงนี้
 ) -> Result<(StatusCode, Json<ApiResponse<PropertyOptionData>>), AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden(
             "คุณไม่มีสิทธิ์เปลี่ยนสถานะ Property Option".to_string(),
         ));
@@ -332,9 +318,7 @@ pub async fn delete_property_option(
     Extension(claims): Extension<Claims>,
     Path(property_option_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
-    let is_admin = claims.roles.contains(&"super_admin".to_string())
-        || claims.roles.contains(&"admin_roles".to_string());
-    if !is_admin {
+    if !claims.is_admin() {
         return Err(AppError::Forbidden(
             "คุณไม่มีสิทธิ์ลบ Property Option".to_string(),
         ));
