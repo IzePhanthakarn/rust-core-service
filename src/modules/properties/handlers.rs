@@ -15,9 +15,7 @@ use crate::{
     },
     modules::properties::{
         dtos::{
-            CreatePropertyOptionRequest, CreatePropertyTypeRequest, PropertyFilterQuery,
-            PropertyOptionData, PropertyResponse, PropertyTypeData, UpdatePropertyTypeRequest,
-            UpdateStatusRequest,
+            CreatePropertyOptionRequest, CreatePropertyTypeRequest, PropertyFilterQuery, PropertyOptionData, PropertyResponse, PropertyTypeData, UpdatePropertyOptionRequest, UpdatePropertyTypeRequest, UpdateStatusRequest
         },
         models::{PropertyOption, PropertyType},
         services::PropertyService,
@@ -81,6 +79,40 @@ pub async fn get_one_property_type(
         .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
 
     let property_data = PropertyService::get_one_property_type(&mut conn, property_type_id)?;
+
+    Ok(Json(ApiResponse::success(
+        200,
+        "ดึงข้อมูล Property Type สำเร็จ",
+        property_data,
+    )))
+}
+
+#[utoipa::path(
+    get,
+    path = "/properties/code/{code}",
+    tag = "Properties",
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "ดึงข้อมูล Property Type สำเร็จ", body = ApiResponse<PropertyResponse>),
+        (status = 404, description = "ไม่พบ Property Type ที่ระบุ"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn get_property_type_by_code(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(code): Path<String>,
+) -> Result<Json<ApiResponse<PropertyResponse>>, AppError> {
+    if !claims.is_admin() {
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูล Property".to_string()));
+    }
+
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    let property_data = PropertyService::get_one_property_type_by_code(&mut conn, &code)?;
 
     Ok(Json(ApiResponse::success(
         200,
@@ -301,6 +333,49 @@ pub async fn update_property_option_status(
         )),
     ))
 }
+
+#[utoipa::path(
+    put,
+    path = "/properties/options",
+    tag = "Properties",
+    request_body = UpdatePropertyOptionRequest,
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "Property option updated successfully", body = ApiResponse<PropertyOptionData>),
+        (status = 404, description = "Property option not found"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn update_property_option(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    ValidatedJson(payload): ValidatedJson<UpdatePropertyOptionRequest>,
+) -> Result<Json<ApiResponse<PropertyOptionData>>, AppError> {
+    if !claims.is_admin() {
+        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Property Option".to_string()));
+    }
+
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+
+    let updated_option = PropertyService::update_property_option(
+        &mut conn,
+        payload.id,
+        &payload.label,
+        &payload.value,
+        payload.sort_order,
+        payload.is_active,
+    )?;
+
+    Ok(Json(ApiResponse::success(
+        200,
+        "แก้ไข Property Option สำเร็จ",
+        updated_option,
+    )))
+}
+
 
 #[utoipa::path(
     delete,

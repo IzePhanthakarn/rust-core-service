@@ -28,11 +28,13 @@ use utoipa::{Modify, OpenApi};
         // Properties Routes
         modules::properties::handlers::get_all_property_type,
         modules::properties::handlers::get_one_property_type,
+        modules::properties::handlers::get_property_type_by_code,
         modules::properties::handlers::create_property_type,
         modules::properties::handlers::update_property_type,
         modules::properties::handlers::delete_property_type,
         modules::properties::handlers::create_property_option,
         modules::properties::handlers::update_property_option_status,
+        modules::properties::handlers::update_property_option,
         modules::properties::handlers::delete_property_option,
 
         // Work Logs Routes
@@ -92,6 +94,7 @@ use utoipa::{Modify, OpenApi};
         modules::properties::dtos::PropertyOptionData,
         modules::properties::dtos::PropertyFilterQuery,
         modules::properties::dtos::UpdateStatusRequest,
+        modules::properties::dtos::UpdatePropertyOptionRequest,
 
         core::response::ApiResponse<modules::properties::models::PropertyType>,
         core::response::ApiResponse<modules::properties::models::PropertyOption>,

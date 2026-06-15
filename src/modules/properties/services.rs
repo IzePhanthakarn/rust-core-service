@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::core::response::PaginatedData;
 use crate::modules::properties::dtos::{PropertyFilterQuery, PropertyOptionData, PropertyTypeData};
-use crate::modules::properties::models::UpdatePropertyType;
+use crate::modules::properties::models::{UpdatePropertyOption, UpdatePropertyType};
 use crate::{
     core::errors::AppError,
     modules::properties::{
@@ -46,6 +46,27 @@ impl PropertyService {
     ) -> Result<PropertyResponse, AppError> {
         let property_data =
             PropertyRepository::get_one_property_type(conn, property_id).map_err(|e| {
+                debug!("Database Error: {:?}", e);
+                match e {
+                    DieselError::NotFound => {
+                        AppError::NotFound("ไม่พบ Property Type ที่ระบุ".to_string())
+                    }
+                    _ => {
+                        AppError::InternalServerError("ไม่สามารถดึงข้อมูล Property Type ได้".to_string())
+                    }
+                }
+            })?;
+
+        Ok(PropertyResponse::from_tuple(property_data))
+    }
+
+    pub fn get_one_property_type_by_code(
+        conn: &mut PgConnection,
+        code: &str,
+    ) -> Result<PropertyResponse, AppError> {
+        let upper_code = code.trim().to_ascii_uppercase();
+        let property_data =
+            PropertyRepository::get_one_property_type_by_code(conn, &upper_code).map_err(|e| {
                 debug!("Database Error: {:?}", e);
                 match e {
                     DieselError::NotFound => {
@@ -116,7 +137,7 @@ impl PropertyService {
     ) -> Result<PropertyType, AppError> {
         let upper_code = code.trim().to_ascii_uppercase();
 
-        let existing_name = PropertyRepository::find_by_name(conn, name)
+        let existing_name = PropertyRepository::find_by_name_excluding(conn, name, id)
             .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
 
         if existing_name.is_some() {
@@ -126,7 +147,7 @@ impl PropertyService {
             )));
         }
 
-        let existing_code = PropertyRepository::find_by_code(conn, &upper_code)
+        let existing_code = PropertyRepository::find_by_code_excluding(conn, &upper_code, id)
             .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
 
         if existing_code.is_some() {
@@ -223,6 +244,32 @@ impl PropertyService {
                     AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string())
                 })?;
         Ok(result)
+    }
+
+    pub fn update_property_option(
+        conn: &mut PgConnection,
+        id: Uuid,
+        label: &str,
+        value: &str,
+        sort_order: i32,
+        is_active: bool,
+    ) -> Result<PropertyOptionData, AppError> {
+        let changeset = UpdatePropertyOption {
+            label: label.to_string(),
+            value: value.to_string(),
+            sort_order,
+            is_active,
+        };
+
+        PropertyRepository::update_property_option(conn, id, changeset).map_err(|e| {
+            println!("Database Error: {:?}", e);
+            match e {
+                diesel::result::Error::NotFound => {
+                    AppError::NotFound("ไม่พบ Property Option ที่ระบุ".to_string())
+                }
+                _ => AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string()),
+            }
+        })
     }
 
     pub fn delete_property_option(

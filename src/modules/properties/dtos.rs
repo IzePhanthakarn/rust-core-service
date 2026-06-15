@@ -58,6 +58,7 @@ pub struct PropertyFilterQuery {
 #[diesel(check_for_backend(pg::Pg))]
 pub struct PropertyOptionData {
     pub id: Uuid,
+    pub sort_order: i32,
     pub label: String,
     pub value: String,
     pub is_active: bool,
@@ -83,6 +84,17 @@ impl PropertyResponse {
             options: opts,
         }
     }
+}
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct UpdatePropertyOptionRequest {
+    pub id: Uuid,
+    #[validate(length(min = 1, message = "กรุณาระบุ Label ของ Property Option ที่ต้องการแก้ไข"))]
+    pub label: String,
+    #[validate(length(min = 1, message = "กรุณาระบุ Value ของ Property Option ที่ต้องการแก้ไข"))]
+    pub value: String,
+    pub sort_order: i32,
+    pub is_active: bool,
 }
 
 #[derive(Deserialize, ToSchema)]

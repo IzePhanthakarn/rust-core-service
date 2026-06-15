@@ -1,6 +1,6 @@
 use crate::modules::properties::dtos::{PropertyOptionData, PropertyTypeData};
 use crate::modules::properties::models::{
-    NewPropertyOption, NewPropertyType, PropertyOption, UpdatePropertyType,
+    NewPropertyOption, NewPropertyType, PropertyOption, UpdatePropertyOption, UpdatePropertyType,
 };
 use crate::schema::property_options;
 use crate::{modules::properties::models::PropertyType, schema::property_types};
@@ -20,9 +20,35 @@ impl PropertyRepository {
             .optional()
     }
 
+    pub fn find_by_name_excluding(
+        conn: &mut PgConnection,
+        name: &str,
+        exclude_id: Uuid,
+    ) -> QueryResult<Option<PropertyType>> {
+        property_types::table
+            .filter(property_types::name.eq(name))
+            .filter(property_types::id.ne(exclude_id))
+            .select(PropertyType::as_select())
+            .first::<PropertyType>(conn)
+            .optional()
+    }
+
     pub fn find_by_code(conn: &mut PgConnection, code: &str) -> QueryResult<Option<PropertyType>> {
         property_types::table
             .filter(property_types::code.eq(code))
+            .select(PropertyType::as_select())
+            .first::<PropertyType>(conn)
+            .optional()
+    }
+
+    pub fn find_by_code_excluding(
+        conn: &mut PgConnection,
+        code: &str,
+        exclude_id: Uuid,
+    ) -> QueryResult<Option<PropertyType>> {
+        property_types::table
+            .filter(property_types::code.eq(code))
+            .filter(property_types::id.ne(exclude_id))
             .select(PropertyType::as_select())
             .first::<PropertyType>(conn)
             .optional()
@@ -74,7 +100,25 @@ impl PropertyRepository {
             .first::<PropertyTypeData>(conn)?;
 
         let options = property_options::table
-            .filter(property_options::property_type_id.eq(property_id))
+            .filter(property_options::property_type_id.eq(property_type.id))
+            .order(property_options::sort_order.asc())
+            .select(PropertyOptionData::as_select())
+            .load::<PropertyOptionData>(conn)?;
+
+        Ok((property_type, options))
+    }
+
+    pub fn get_one_property_type_by_code(
+        conn: &mut PgConnection,
+        code: &str,
+    ) -> QueryResult<(PropertyTypeData, Vec<PropertyOptionData>)> {
+        let property_type = property_types::table
+            .filter(property_types::code.eq(code))
+            .select(PropertyTypeData::as_select())
+            .first::<PropertyTypeData>(conn)?;
+
+        let options = property_options::table
+            .filter(property_options::property_type_id.eq(property_type.id))
             .order(property_options::sort_order.asc())
             .select(PropertyOptionData::as_select())
             .load::<PropertyOptionData>(conn)?;
@@ -151,6 +195,17 @@ impl PropertyRepository {
     ) -> QueryResult<PropertyOptionData> {
         diesel::update(property_options::table.filter(property_options::id.eq(property_option_id)))
             .set(property_options::is_active.eq(is_active))
+            .returning(PropertyOptionData::as_returning())
+            .get_result(conn)
+    }
+
+    pub fn update_property_option(
+        conn: &mut PgConnection,
+        id: Uuid,
+        changeset: UpdatePropertyOption,
+    ) -> QueryResult<PropertyOptionData> {
+        diesel::update(property_options::table.filter(property_options::id.eq(id)))
+            .set(changeset)
             .returning(PropertyOptionData::as_returning())
             .get_result(conn)
     }

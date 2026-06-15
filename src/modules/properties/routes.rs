@@ -14,10 +14,17 @@ pub fn property_routes() -> Router<AppState> {
                 .put(handlers::update_property_type),
         )
         .route(
+            "/code/{code}",
+            get(handlers::get_property_type_by_code),
+        )
+        .route(
             "/{property_type_id}",
             get(handlers::get_one_property_type).delete(handlers::delete_property_type),
         )
-        .route("/options", post(handlers::create_property_option))
+        .route(
+            "/options",
+            post(handlers::create_property_option).put(handlers::update_property_option),
+        )
         .route(
             "/options/{property_option_id}",
             delete(handlers::delete_property_option),

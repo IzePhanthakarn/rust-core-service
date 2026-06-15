@@ -65,3 +65,12 @@ pub struct NewPropertyOption {
     pub is_active: bool,
     pub created_by: Uuid,
 }
+
+#[derive(AsChangeset)]
+#[diesel(table_name = property_options)]
+pub struct UpdatePropertyOption {
+    pub label: String,
+    pub value: String,
+    pub sort_order: i32,
+    pub is_active: bool,
+}
