@@ -4,9 +4,9 @@ use diesel::Connection;
 use diesel::PgConnection;
 use uuid::Uuid;
 
-use crate::core::response::PaginatedData;
 use crate::modules::work_logs::dtos::UpdateWorkLogRequest;
 use crate::modules::work_logs::dtos::WorkLogFilterQuery;
+use crate::modules::work_logs::dtos::WorkLogListResponse;
 use crate::{
     core::errors::AppError,
     modules::work_logs::{
@@ -23,28 +23,34 @@ impl WorkLogService {
         conn: &mut PgConnection,
         user_id: Uuid,
         filters: WorkLogFilterQuery,
-    ) -> Result<PaginatedData<WorkLogResponse>, AppError> {
+    ) -> Result<WorkLogListResponse, AppError> {
         let page = filters.page.unwrap_or(1).max(1);
         let limit = filters.limit.unwrap_or(10).clamp(1, 100);
 
-        let (items, total_items) = WorkLogRepository::find_all_work_logs(
-            conn,
-            page,
-            limit,
-            user_id,
-            filters.title,
-            filters.month,
-            filters.year,
-        )
-        .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
+        let (items, total_items, all_work_logs, monthly_mood_score, monthly_productivity_score) =
+            WorkLogRepository::find_all_work_logs(
+                conn,
+                page,
+                limit,
+                user_id,
+                filters.title,
+                filters.month,
+                filters.year,
+            )
+            .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
         let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
 
-        Ok(PaginatedData {
+        Ok(WorkLogListResponse {
             items,
             total_items,
             total_pages,
             current_page: page,
+            all_work_logs,
+            monthly_mood_score: Self::round_to_two_decimal_places(monthly_mood_score),
+            monthly_productivity_score: Self::round_to_two_decimal_places(
+                monthly_productivity_score,
+            ),
         })
     }
 
@@ -205,5 +211,9 @@ impl WorkLogService {
         }
 
         normalized
+    }
+
+    fn round_to_two_decimal_places(value: f64) -> f64 {
+        (value * 100.0).round() / 100.0
     }
 }

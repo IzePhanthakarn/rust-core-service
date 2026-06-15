@@ -79,6 +79,17 @@ pub struct UpdateWorkLogRequest {
 }
 
 #[derive(Serialize, ToSchema)]
+pub struct WorkLogListResponse {
+    pub items: Vec<WorkLogResponse>,
+    pub total_items: i64,
+    pub total_pages: i64,
+    pub current_page: i64,
+    pub all_work_logs: i64,
+    pub monthly_mood_score: f64,
+    pub monthly_productivity_score: f64,
+}
+
+#[derive(Serialize, ToSchema)]
 pub struct WorkLogResponse {
     pub id: Uuid,
     pub user_id: Uuid,

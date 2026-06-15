@@ -7,7 +7,11 @@ use crate::{
 };
 use chrono::{DateTime, TimeZone, Utc};
 use diesel::prelude::*;
-use diesel::{PgConnection, QueryResult, SelectableHelper};
+use diesel::{
+    PgConnection, QueryResult, SelectableHelper,
+    dsl::sql,
+    sql_types::{Double, Nullable},
+};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -22,7 +26,7 @@ impl WorkLogRepository {
         title: Option<String>,
         month: Option<String>,
         year: Option<String>,
-    ) -> QueryResult<(Vec<WorkLogResponse>, i64)> {
+    ) -> QueryResult<(Vec<WorkLogResponse>, i64, i64, f64, f64)> {
         let offset = (page - 1) * limit;
 
         let mut data_query = work_logs::table
@@ -31,11 +35,15 @@ impl WorkLogRepository {
         let mut count_query = work_logs::table
             .filter(work_logs::user_id.eq(user_id))
             .into_boxed();
+        let mut stats_query = work_logs::table
+            .filter(work_logs::user_id.eq(user_id))
+            .into_boxed();
 
-        if let Some(title_text) = title {
+        if let Some(title_text) = title.as_deref() {
             let search_pattern = format!("%{}%", title_text);
             data_query = data_query.filter(work_logs::title.ilike(search_pattern.clone()));
-            count_query = count_query.filter(work_logs::title.ilike(search_pattern));
+            count_query = count_query.filter(work_logs::title.ilike(search_pattern.clone()));
+            stats_query = stats_query.filter(work_logs::title.ilike(search_pattern));
         }
 
         if let Some((start_date, end_date)) =
@@ -45,6 +53,9 @@ impl WorkLogRepository {
                 .filter(work_logs::date_logged.ge(start_date))
                 .filter(work_logs::date_logged.lt(end_date));
             count_query = count_query
+                .filter(work_logs::date_logged.ge(start_date))
+                .filter(work_logs::date_logged.lt(end_date));
+            stats_query = stats_query
                 .filter(work_logs::date_logged.ge(start_date))
                 .filter(work_logs::date_logged.lt(end_date));
         }
@@ -89,8 +100,26 @@ impl WorkLogRepository {
             .collect();
 
         let total: i64 = count_query.count().get_result(conn)?;
+        let all_work_logs: i64 = work_logs::table
+            .filter(work_logs::user_id.eq(user_id))
+            .count()
+            .get_result(conn)?;
+        let (monthly_mood_score, monthly_productivity_score) = stats_query
+            .select((
+                sql::<Nullable<Double>>("AVG(mood_score)::DOUBLE PRECISION"),
+                sql::<Nullable<Double>>("AVG(productivity_score)::DOUBLE PRECISION"),
+            ))
+            .first::<(Option<f64>, Option<f64>)>(conn)?;
+        let monthly_mood_score = monthly_mood_score.unwrap_or(0.0);
+        let monthly_productivity_score = monthly_productivity_score.unwrap_or(0.0);
 
-        Ok((items, total))
+        Ok((
+            items,
+            total,
+            all_work_logs,
+            monthly_mood_score,
+            monthly_productivity_score,
+        ))
     }
 
     pub fn find_one_work_log(conn: &mut PgConnection, work_log_id: Uuid) -> QueryResult<WorkLog> {

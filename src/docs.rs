@@ -102,7 +102,9 @@ use utoipa::{Modify, OpenApi};
         modules::work_logs::models::WorkLog,
         modules::work_logs::models::WorkLogTag,
         modules::work_logs::dtos::CreateWorkLogRequest,
+        modules::work_logs::dtos::WorkLogListResponse,
         modules::work_logs::dtos::WorkLogResponse,
+        core::response::ApiResponse<modules::work_logs::dtos::WorkLogListResponse>,
         core::response::ApiResponse<modules::work_logs::dtos::WorkLogResponse>,
         // ================================
     )),

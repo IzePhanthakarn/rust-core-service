@@ -7,14 +7,12 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    core::{
-        errors::AppError,
-        extractors::ValidatedJson,
-        jwt::Claims,
-        response::{ApiResponse, PaginatedData},
-    },
+    core::{errors::AppError, extractors::ValidatedJson, jwt::Claims, response::ApiResponse},
     modules::work_logs::{
-        dtos::{CreateWorkLogRequest, UpdateWorkLogRequest, WorkLogFilterQuery, WorkLogResponse},
+        dtos::{
+            CreateWorkLogRequest, UpdateWorkLogRequest, WorkLogFilterQuery, WorkLogListResponse,
+            WorkLogResponse,
+        },
         services::WorkLogService,
     },
 };
@@ -26,7 +24,7 @@ use crate::{
     params(WorkLogFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "Work logs found successfully", body = ApiResponse<PaginatedData<WorkLogResponse>>),
+        (status = 200, description = "Work logs found successfully", body = ApiResponse<WorkLogListResponse>),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -34,7 +32,7 @@ pub async fn get_all_work_logs(
     State(state): State<AppState>,
     Query(filters): Query<WorkLogFilterQuery>,
     Extension(claims): Extension<Claims>,
-) -> Result<Json<ApiResponse<PaginatedData<WorkLogResponse>>>, AppError> {
+) -> Result<Json<ApiResponse<WorkLogListResponse>>, AppError> {
     let mut conn = state
         .db_pool
         .get()
