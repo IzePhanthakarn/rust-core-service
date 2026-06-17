@@ -17,6 +17,21 @@ pub mod sql_types {
 diesel::table! {
     use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
 
+    holiday (id) {
+        id -> Uuid,
+        #[max_length = 1000]
+        holiday_description -> Varchar,
+        holiday_date -> Timestamptz,
+        #[max_length = 10]
+        holiday_year -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     property_options (id) {
         id -> Uuid,
         property_type_id -> Uuid,
@@ -139,6 +154,7 @@ diesel::joinable!(work_log_tags -> work_logs (log_id));
 diesel::joinable!(work_logs -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    holiday,
     property_options,
     property_types,
     social_accounts,

@@ -42,7 +42,10 @@ use utoipa::{Modify, OpenApi};
         modules::work_logs::handlers::get_one_work_log,
         modules::work_logs::handlers::create_work_log,
         modules::work_logs::handlers::update_work_log,
-        modules::work_logs::handlers::delete_work_log
+        modules::work_logs::handlers::delete_work_log,
+
+        // Work Days Routes
+        modules::work_days::handlers::fetch_holidays
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -110,13 +113,21 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<modules::work_logs::dtos::WorkLogListResponse>,
         core::response::ApiResponse<modules::work_logs::dtos::WorkLogResponse>,
         // ================================
+
+        // ==== Work Days ====
+        modules::work_days::dtos::FetchHolidayRequest,
+        modules::work_days::dtos::FetchHolidayResult,
+        modules::work_days::models::Holiday,
+        core::response::ApiResponse<modules::work_days::dtos::FetchHolidayResult>,
+        // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
         (name = "Auth", description = "Authentication & User Management") ,
         (name = "Users", description = "User Management"),
         (name = "Properties", description = "Property Type and Option Management"),
-        (name = "Work Logs", description = "Work Log Management")
+        (name = "Work Logs", description = "Work Log Management"),
+        (name = "Work Days", description = "Work Days & Holiday Management")
     ),
     servers(
         (url = "/v1", description = "Core API v1")

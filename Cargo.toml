@@ -36,6 +36,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 rand_core = { version = "0.6", features = ["std"] }
 tower = { version = "0.5.3", features = ["util"] }
 log = "0.4.32"
+reqwest = { version = "0.12", features = ["json"] }
 
 [profile.release]
 opt-level = 3     # [สำคัญสุด] เปลี่ยนกลับเป็น 3 เพื่อรีด Performance ความเร็วสูงสุด
