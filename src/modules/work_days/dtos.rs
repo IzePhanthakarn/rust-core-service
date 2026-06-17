@@ -1,7 +1,8 @@
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
+use validator::Validate;
 
 #[derive(Deserialize, ToSchema)]
 pub struct FetchHolidayRequest {
@@ -89,4 +90,62 @@ pub struct HolidayStats {
 pub struct HolidayListResponse {
     pub items: Vec<HolidayResponse>,
     pub stats: HolidayStats,
+}
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct CreateEventRequest {
+    #[validate(length(min = 1, max = 100, message = "Title ต้องมี 1-100 ตัวอักษร"))]
+    pub title: String,
+    #[validate(length(max = 3000, message = "Description ต้องไม่เกิน 3000 ตัวอักษร"))]
+    pub description: Option<String>,
+    #[schema(value_type = String, example = "2026-06-01T13:00:00+07:00")]
+    pub start_date: DateTime<FixedOffset>,
+    #[schema(value_type = String, example = "2026-06-03T18:00:00+07:00")]
+    pub end_date: DateTime<FixedOffset>,
+    #[validate(length(min = 1, max = 20, message = "Tag ต้องมี 1-20 ตัวอักษร"))]
+    pub tag: String,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct EventResponse {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub title: String,
+    pub description: Option<String>,
+    pub start_date: DateTime<Utc>,
+    pub end_date: DateTime<Utc>,
+    pub tag: String,
+    pub date: String,
+    pub time: String,
+}
+
+#[derive(Deserialize, ToSchema, Validate)]
+pub struct UpdateEventRequest {
+    pub user_id: Uuid,
+    #[validate(length(min = 1, max = 100, message = "Title ต้องมี 1-100 ตัวอักษร"))]
+    pub title: String,
+    #[validate(length(max = 3000, message = "Description ต้องไม่เกิน 3000 ตัวอักษร"))]
+    pub description: Option<String>,
+    #[schema(value_type = String, example = "2026-06-01T13:00:00+07:00")]
+    pub start_date: DateTime<FixedOffset>,
+    #[schema(value_type = String, example = "2026-06-01T18:00:00+07:00")]
+    pub end_date: DateTime<FixedOffset>,
+    #[validate(length(min = 1, max = 20, message = "Tag ต้องมี 1-20 ตัวอักษร"))]
+    pub tag: String,
+}
+
+#[derive(Deserialize, IntoParams)]
+pub struct EventFilterQuery {
+    #[param(example = "2026")]
+    pub year: Option<String>,
+    #[param(example = "6")]
+    pub month: Option<String>,
+    #[param(example = "work")]
+    pub tag: Option<String>,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct EventListResponse {
+    pub items: Vec<EventResponse>,
+    pub total_events: i64,
 }

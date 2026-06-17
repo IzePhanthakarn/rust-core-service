@@ -11,7 +11,7 @@ CREATE TABLE events (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE holiday (
+CREATE TABLE holidays (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     holiday_description VARCHAR(1000) NOT NULL,
     holiday_date TIMESTAMP WITH TIME ZONE NOT NULL,

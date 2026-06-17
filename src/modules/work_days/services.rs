@@ -1,18 +1,20 @@
 use std::collections::HashSet;
 
-use chrono::{Datelike, Utc};
+use chrono::{Datelike, DateTime, Duration, FixedOffset, NaiveTime, TimeZone, Utc};
 use diesel::Connection;
 use diesel::PgConnection;
+use uuid::Uuid;
 
 use crate::{
     core::errors::AppError,
     modules::work_days::{
         dtos::{
-            BotHolidayItem, FetchHolidayResult, HolidayListResponse, HolidayResponse,
-            HolidayStats, NextHolidayInfo,
+            BotHolidayItem, CreateEventRequest, EventFilterQuery, EventListResponse, EventResponse,
+            FetchHolidayResult, HolidayListResponse, HolidayResponse, HolidayStats,
+            NextHolidayInfo, UpdateEventRequest,
         },
-        models::NewHoliday,
-        repositories::HolidayRepository,
+        models::{NewEvent, NewHoliday, UpdateEvent},
+        repositories::{EventRepository, HolidayRepository},
     },
 };
 
@@ -116,4 +118,200 @@ impl WorkDayService {
             },
         })
     }
+
+    pub fn update_event(
+        conn: &mut PgConnection,
+        event_id: Uuid,
+        payload: &UpdateEventRequest,
+        claims_user_id: Uuid,
+    ) -> Result<EventResponse, AppError> {
+        if payload.user_id != claims_user_id {
+            return Err(AppError::Forbidden(
+                "คุณไม่มีสิทธิ์แก้ไข event นี้".to_string(),
+            ));
+        }
+
+        if payload.end_date <= payload.start_date {
+            return Err(AppError::BadRequest(
+                "end_date ต้องมาหลัง start_date".to_string(),
+            ));
+        }
+
+        let existing = EventRepository::find_by_id(conn, event_id).map_err(|_| {
+            AppError::NotFound("ไม่พบ event ที่ต้องการแก้ไข".to_string())
+        })?;
+
+        if existing.user_id != claims_user_id {
+            return Err(AppError::Forbidden(
+                "คุณไม่มีสิทธิ์แก้ไข event นี้".to_string(),
+            ));
+        }
+
+        let changes = UpdateEvent {
+            title: payload.title.clone(),
+            description: payload.description.clone(),
+            start_date: payload.start_date.with_timezone(&Utc),
+            end_date: payload.end_date.with_timezone(&Utc),
+            tag: payload.tag.clone(),
+            updated_at: Utc::now(),
+        };
+
+        let updated = EventRepository::update(conn, event_id, changes).map_err(|_| {
+            AppError::InternalServerError("ไม่สามารถแก้ไข event ได้".to_string())
+        })?;
+
+        let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
+        Ok(EventResponse {
+            date: updated.end_date.with_timezone(&bkk).format("%Y-%m-%d").to_string(),
+            time: updated.start_date.with_timezone(&bkk).format("%H:%M").to_string(),
+            id: updated.id,
+            user_id: updated.user_id,
+            title: updated.title,
+            description: updated.description,
+            start_date: updated.start_date,
+            end_date: updated.end_date,
+            tag: updated.tag,
+        })
+    }
+
+    pub fn get_events(
+        conn: &mut PgConnection,
+        user_id: Uuid,
+        filters: EventFilterQuery,
+    ) -> Result<EventListResponse, AppError> {
+        let year = filters
+            .year
+            .as_deref()
+            .map(|y| y.parse::<i32>())
+            .transpose()
+            .map_err(|_| AppError::BadRequest("year ต้องเป็นตัวเลข".to_string()))?;
+
+        let month = filters
+            .month
+            .as_deref()
+            .map(|m| m.parse::<u32>())
+            .transpose()
+            .map_err(|_| AppError::BadRequest("month ต้องเป็นตัวเลข 1-12".to_string()))?;
+
+        if let Some(m) = month {
+            if !(1..=12).contains(&m) {
+                return Err(AppError::BadRequest("month ต้องอยู่ระหว่าง 1-12".to_string()));
+            }
+        }
+
+        let events = EventRepository::find_all_by_user(conn, user_id, year, month, filters.tag)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูล event ได้".to_string()))?;
+
+        let total_events = events.len() as i64;
+
+        let items = events
+            .into_iter()
+            .map(|e| {
+                let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
+                let end_local = e.end_date.with_timezone(&bkk);
+                let start_local = e.start_date.with_timezone(&bkk);
+                EventResponse {
+                    date: end_local.format("%Y-%m-%d").to_string(),
+                    time: start_local.format("%H:%M").to_string(),
+                    id: e.id,
+                    user_id: e.user_id,
+                    title: e.title,
+                    description: e.description,
+                    start_date: e.start_date,
+                    end_date: e.end_date,
+                    tag: e.tag,
+                }
+            })
+            .collect();
+
+        Ok(EventListResponse { items, total_events })
+    }
+
+    pub fn create_events(
+        conn: &mut PgConnection,
+        payload: &CreateEventRequest,
+        user_id: Uuid,
+    ) -> Result<Vec<EventResponse>, AppError> {
+        if payload.end_date <= payload.start_date {
+            return Err(AppError::BadRequest(
+                "end_date ต้องมาหลัง start_date".to_string(),
+            ));
+        }
+
+        let new_events = split_into_daily_events(user_id, payload);
+
+        let created = EventRepository::insert_batch(conn, new_events).map_err(|_| {
+            AppError::InternalServerError("ไม่สามารถบันทึก event ได้".to_string())
+        })?;
+
+        Ok(created
+            .into_iter()
+            .map(|e| {
+                let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
+                let end_local = e.end_date.with_timezone(&bkk);
+                let start_local = e.start_date.with_timezone(&bkk);
+                EventResponse {
+                    date: end_local.format("%Y-%m-%d").to_string(),
+                    time: start_local.format("%H:%M").to_string(),
+                    id: e.id,
+                    user_id: e.user_id,
+                    title: e.title,
+                    description: e.description,
+                    start_date: e.start_date,
+                    end_date: e.end_date,
+                    tag: e.tag,
+                }
+            })
+            .collect())
+    }
+}
+
+fn split_into_daily_events(user_id: Uuid, payload: &CreateEventRequest) -> Vec<NewEvent> {
+    let start = payload.start_date;
+    let end = payload.end_date;
+    let offset = *start.offset();
+
+    let start_local_date = start.date_naive();
+    let end_local_date = end.date_naive();
+
+    let mut result = Vec::new();
+    let mut current = start_local_date;
+
+    let eod_time = NaiveTime::from_hms_opt(23, 59, 0).unwrap();
+    let sod_time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+
+    while current <= end_local_date {
+        let seg_start: DateTime<Utc> = if current == start_local_date {
+            start.with_timezone(&Utc)
+        } else {
+            offset
+                .from_local_datetime(&current.and_time(sod_time))
+                .single()
+                .unwrap()
+                .with_timezone(&Utc)
+        };
+
+        let seg_end: DateTime<Utc> = if current == end_local_date {
+            end.with_timezone(&Utc)
+        } else {
+            offset
+                .from_local_datetime(&current.and_time(eod_time))
+                .single()
+                .unwrap()
+                .with_timezone(&Utc)
+        };
+
+        result.push(NewEvent {
+            user_id,
+            title: payload.title.clone(),
+            description: payload.description.clone(),
+            start_date: seg_start,
+            end_date: seg_end,
+            tag: payload.tag.clone(),
+        });
+
+        current = current + Duration::days(1);
+    }
+
+    result
 }

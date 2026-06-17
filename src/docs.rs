@@ -46,7 +46,10 @@ use utoipa::{Modify, OpenApi};
 
         // Work Days Routes
         modules::work_days::handlers::get_holidays,
-        modules::work_days::handlers::fetch_holidays
+        modules::work_days::handlers::fetch_holidays,
+        modules::work_days::handlers::get_events,
+        modules::work_days::handlers::create_events,
+        modules::work_days::handlers::update_event
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -122,9 +125,16 @@ use utoipa::{Modify, OpenApi};
         modules::work_days::dtos::HolidayListResponse,
         modules::work_days::dtos::HolidayStats,
         modules::work_days::dtos::NextHolidayInfo,
+        modules::work_days::dtos::CreateEventRequest,
+        modules::work_days::dtos::UpdateEventRequest,
+        modules::work_days::dtos::EventResponse,
+        modules::work_days::dtos::EventListResponse,
         modules::work_days::models::Holiday,
         core::response::ApiResponse<modules::work_days::dtos::FetchHolidayResult>,
         core::response::ApiResponse<modules::work_days::dtos::HolidayListResponse>,
+        core::response::ApiResponse<Vec<modules::work_days::dtos::EventResponse>>,
+        core::response::ApiResponse<modules::work_days::dtos::EventListResponse>,
+        core::response::ApiResponse<modules::work_days::dtos::EventResponse>,
         // ================================
     )),
     tags(

@@ -1,10 +1,15 @@
-use axum::{Json, extract::{Query, State}, http::StatusCode};
+use axum::{Extension, Json, extract::{Path, Query, State}, http::StatusCode};
+use uuid::Uuid;
 
 use crate::{
     AppState,
-    core::{errors::AppError, response::ApiResponse},
+    core::{errors::AppError, extractors::ValidatedJson, jwt::Claims, response::ApiResponse},
     modules::work_days::{
-        dtos::{BotHolidayResponse, FetchHolidayRequest, FetchHolidayResult, HolidayFilterQuery, HolidayListResponse},
+        dtos::{
+            BotHolidayResponse, CreateEventRequest, EventFilterQuery, EventListResponse,
+            EventResponse, FetchHolidayRequest, FetchHolidayResult, HolidayFilterQuery,
+            HolidayListResponse, UpdateEventRequest,
+        },
         services::WorkDayService,
     },
 };
@@ -70,5 +75,93 @@ pub async fn fetch_holidays(
     Ok((
         StatusCode::CREATED,
         Json(ApiResponse::success(201, "บันทึกวันหยุดสำเร็จ", result)),
+    ))
+}
+
+#[utoipa::path(
+    put,
+    path = "/work-days/events/{event_id}",
+    tag = "Work Days",
+    request_body = UpdateEventRequest,
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "แก้ไข event สำเร็จ", body = ApiResponse<EventResponse>),
+        (status = 400, description = "ข้อมูลไม่ถูกต้อง"),
+        (status = 403, description = "ไม่มีสิทธิ์แก้ไข"),
+        (status = 404, description = "ไม่พบ event"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn update_event(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(event_id): Path<Uuid>,
+    ValidatedJson(payload): ValidatedJson<UpdateEventRequest>,
+) -> Result<Json<ApiResponse<EventResponse>>, AppError> {
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
+
+    let result = WorkDayService::update_event(&mut conn, event_id, &payload, claims.sub)?;
+
+    Ok(Json(ApiResponse::success(200, "แก้ไข event สำเร็จ", result)))
+}
+
+#[utoipa::path(
+    get,
+    path = "/work-days/events",
+    tag = "Work Days",
+    params(EventFilterQuery),
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "ดึงข้อมูล events สำเร็จ", body = ApiResponse<EventListResponse>),
+        (status = 400, description = "ข้อมูล filter ไม่ถูกต้อง"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn get_events(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Query(filters): Query<EventFilterQuery>,
+) -> Result<Json<ApiResponse<EventListResponse>>, AppError> {
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
+
+    let data = WorkDayService::get_events(&mut conn, claims.sub, filters)?;
+
+    Ok(Json(ApiResponse::success(200, "ดึงข้อมูล events สำเร็จ", data)))
+}
+
+#[utoipa::path(
+    post,
+    path = "/work-days/events",
+    tag = "Work Days",
+    request_body = CreateEventRequest,
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 201, description = "สร้าง event สำเร็จ", body = ApiResponse<Vec<EventResponse>>),
+        (status = 400, description = "ข้อมูลไม่ถูกต้อง"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn create_events(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    ValidatedJson(payload): ValidatedJson<CreateEventRequest>,
+) -> Result<(StatusCode, Json<ApiResponse<Vec<EventResponse>>>), AppError> {
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
+
+    let result = WorkDayService::create_events(&mut conn, &payload, claims.sub)?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(ApiResponse::success(201, "สร้าง event สำเร็จ", result)),
     ))
 }
