@@ -91,6 +91,18 @@ impl WorkLogService {
         work_log: &CreateWorkLogRequest,
         user_id: Uuid,
     ) -> Result<WorkLogResponse, AppError> {
+        let has_work_log_on_date =
+            WorkLogRepository::exists_work_log_on_date(conn, user_id, work_log.date_logged)
+                .map_err(|_| {
+                    AppError::InternalServerError("Failed to check existing work log".to_string())
+                })?;
+
+        if has_work_log_on_date {
+            return Err(AppError::Conflict(
+                "A work log has already been recorded for this date".to_string(),
+            ));
+        }
+
         conn.transaction::<WorkLogResponse, AppError, _>(|conn| {
             let new_work_log = NewWorkLog {
                 user_id,

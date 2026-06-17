@@ -8,9 +8,9 @@ use crate::{
 use chrono::{DateTime, TimeZone, Utc};
 use diesel::prelude::*;
 use diesel::{
-    PgConnection, QueryResult, SelectableHelper,
-    dsl::sql,
+    dsl::{count_star, sql},
     sql_types::{Double, Nullable},
+    PgConnection, QueryResult, SelectableHelper,
 };
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -127,6 +127,24 @@ impl WorkLogRepository {
             .filter(work_logs::id.eq(work_log_id))
             .first(conn)
     }
+
+    pub fn exists_work_log_on_date(
+        conn: &mut PgConnection,
+        user_id: Uuid,
+        date_logged: DateTime<Utc>,
+    ) -> QueryResult<bool> {
+        let (start_date, end_date) = Self::day_range(date_logged);
+
+        let total: i64 = work_logs::table
+            .filter(work_logs::user_id.eq(user_id))
+            .filter(work_logs::date_logged.ge(start_date))
+            .filter(work_logs::date_logged.lt(end_date))
+            .select(count_star())
+            .first(conn)?;
+
+        Ok(total > 0)
+    }
+
     pub fn create_work_log(
         conn: &mut PgConnection,
         work_log: &NewWorkLog<'_>,
@@ -178,6 +196,14 @@ impl WorkLogRepository {
 
     pub fn delete_work_log(conn: &mut PgConnection, work_log_id: Uuid) -> QueryResult<usize> {
         diesel::delete(work_logs::table.filter(work_logs::id.eq(work_log_id))).execute(conn)
+    }
+
+    fn day_range(date_logged: DateTime<Utc>) -> (DateTime<Utc>, DateTime<Utc>) {
+        let date = date_logged.date_naive();
+        let start_date = Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0).unwrap());
+        let end_date = start_date + chrono::Duration::days(1);
+
+        (start_date, end_date)
     }
 
     fn month_year_range(
