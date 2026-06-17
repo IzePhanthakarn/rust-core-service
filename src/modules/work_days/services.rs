@@ -1,12 +1,16 @@
 use std::collections::HashSet;
 
+use chrono::{Datelike, Utc};
 use diesel::Connection;
 use diesel::PgConnection;
 
 use crate::{
     core::errors::AppError,
     modules::work_days::{
-        dtos::{BotHolidayItem, FetchHolidayResult},
+        dtos::{
+            BotHolidayItem, FetchHolidayResult, HolidayListResponse, HolidayResponse,
+            HolidayStats, NextHolidayInfo,
+        },
         models::NewHoliday,
         repositories::HolidayRepository,
     },
@@ -55,5 +59,61 @@ impl WorkDayService {
         })?;
 
         Ok(FetchHolidayResult { inserted_count })
+    }
+
+    pub fn get_holidays(
+        conn: &mut PgConnection,
+        year: Option<String>,
+    ) -> Result<HolidayListResponse, AppError> {
+        let now = Utc::now();
+        let target_year = year.unwrap_or_else(|| now.year().to_string());
+
+        let holidays = HolidayRepository::find_all_by_year(conn, &target_year)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูลวันหยุดได้".to_string()))?;
+
+        let current_month = now.month();
+
+        let total_holidays_this_year = holidays.len() as i64;
+
+        let total_holidays_this_month = holidays
+            .iter()
+            .filter(|h| h.holiday_date.month() == current_month)
+            .count() as i64;
+
+        let next_upcoming_holiday = holidays
+            .iter()
+            .find(|h| h.holiday_date > now)
+            .map(|h| {
+                let days_until =
+                    (h.holiday_date.date_naive() - now.date_naive()).num_days();
+                NextHolidayInfo {
+                    holiday_description: h.holiday_description.clone(),
+                    holiday_date: h.holiday_date,
+                    days_until,
+                }
+            });
+
+        let remaining_holidays_this_year =
+            holidays.iter().filter(|h| h.holiday_date > now).count() as i64;
+
+        let items = holidays
+            .into_iter()
+            .map(|h| HolidayResponse {
+                id: h.id,
+                holiday_description: h.holiday_description,
+                holiday_date: h.holiday_date,
+                holiday_year: h.holiday_year,
+            })
+            .collect();
+
+        Ok(HolidayListResponse {
+            items,
+            stats: HolidayStats {
+                total_holidays_this_year,
+                total_holidays_this_month,
+                next_upcoming_holiday,
+                remaining_holidays_this_year,
+            },
+        })
     }
 }

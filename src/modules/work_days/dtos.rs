@@ -1,6 +1,7 @@
 use chrono::{DateTime, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
+use uuid::Uuid;
 
 #[derive(Deserialize, ToSchema)]
 pub struct FetchHolidayRequest {
@@ -53,4 +54,39 @@ pub struct BotHolidayResponse {
 #[derive(Serialize, ToSchema)]
 pub struct FetchHolidayResult {
     pub inserted_count: i64,
+}
+
+#[derive(Deserialize, IntoParams)]
+pub struct HolidayFilterQuery {
+    #[param(example = "2026")]
+    pub year: Option<String>,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct HolidayResponse {
+    pub id: Uuid,
+    pub holiday_description: String,
+    pub holiday_date: DateTime<Utc>,
+    pub holiday_year: String,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct NextHolidayInfo {
+    pub holiday_description: String,
+    pub holiday_date: DateTime<Utc>,
+    pub days_until: i64,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct HolidayStats {
+    pub total_holidays_this_year: i64,
+    pub total_holidays_this_month: i64,
+    pub next_upcoming_holiday: Option<NextHolidayInfo>,
+    pub remaining_holidays_this_year: i64,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct HolidayListResponse {
+    pub items: Vec<HolidayResponse>,
+    pub stats: HolidayStats,
 }

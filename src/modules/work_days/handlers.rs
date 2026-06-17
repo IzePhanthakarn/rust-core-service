@@ -1,13 +1,38 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{Json, extract::{Query, State}, http::StatusCode};
 
 use crate::{
     AppState,
     core::{errors::AppError, response::ApiResponse},
     modules::work_days::{
-        dtos::{BotHolidayResponse, FetchHolidayRequest, FetchHolidayResult},
+        dtos::{BotHolidayResponse, FetchHolidayRequest, FetchHolidayResult, HolidayFilterQuery, HolidayListResponse},
         services::WorkDayService,
     },
 };
+
+#[utoipa::path(
+    get,
+    path = "/work-days/holidays",
+    tag = "Work Days",
+    params(HolidayFilterQuery),
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "ดึงข้อมูลวันหยุดสำเร็จ", body = ApiResponse<HolidayListResponse>),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn get_holidays(
+    State(state): State<AppState>,
+    Query(filters): Query<HolidayFilterQuery>,
+) -> Result<Json<ApiResponse<HolidayListResponse>>, AppError> {
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
+
+    let data = WorkDayService::get_holidays(&mut conn, filters.year)?;
+
+    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลวันหยุดสำเร็จ", data)))
+}
 
 #[utoipa::path(
     post,

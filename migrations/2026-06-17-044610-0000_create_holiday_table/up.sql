@@ -1,9 +1,0 @@
--- Your SQL goes here
-CREATE TABLE holiday (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    holiday_description VARCHAR(1000) NOT NULL,
-    holiday_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    holiday_year VARCHAR(10) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-)

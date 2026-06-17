@@ -12,6 +12,14 @@ impl HolidayRepository {
         diesel::delete(holiday::table.filter(holiday::holiday_year.eq(year))).execute(conn)
     }
 
+    pub fn find_all_by_year(conn: &mut PgConnection, year: &str) -> QueryResult<Vec<Holiday>> {
+        holiday::table
+            .filter(holiday::holiday_year.eq(year))
+            .order_by(holiday::holiday_date.asc())
+            .select(Holiday::as_select())
+            .load::<Holiday>(conn)
+    }
+
     pub fn insert_batch(
         conn: &mut PgConnection,
         holidays: Vec<NewHoliday>,

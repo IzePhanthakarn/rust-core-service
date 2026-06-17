@@ -45,6 +45,7 @@ use utoipa::{Modify, OpenApi};
         modules::work_logs::handlers::delete_work_log,
 
         // Work Days Routes
+        modules::work_days::handlers::get_holidays,
         modules::work_days::handlers::fetch_holidays
     ),
     components(schemas(
@@ -117,8 +118,13 @@ use utoipa::{Modify, OpenApi};
         // ==== Work Days ====
         modules::work_days::dtos::FetchHolidayRequest,
         modules::work_days::dtos::FetchHolidayResult,
+        modules::work_days::dtos::HolidayResponse,
+        modules::work_days::dtos::HolidayListResponse,
+        modules::work_days::dtos::HolidayStats,
+        modules::work_days::dtos::NextHolidayInfo,
         modules::work_days::models::Holiday,
         core::response::ApiResponse<modules::work_days::dtos::FetchHolidayResult>,
+        core::response::ApiResponse<modules::work_days::dtos::HolidayListResponse>,
         // ================================
     )),
     tags(
