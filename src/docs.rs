@@ -44,13 +44,13 @@ use utoipa::{Modify, OpenApi};
         modules::work_logs::handlers::update_work_log,
         modules::work_logs::handlers::delete_work_log,
 
-        // Work Days Routes
-        modules::work_days::handlers::get_holidays,
-        modules::work_days::handlers::fetch_holidays,
-        modules::work_days::handlers::get_events,
-        modules::work_days::handlers::create_events,
-        modules::work_days::handlers::update_event,
-        modules::work_days::handlers::delete_event
+        // Calendar Routes
+        modules::calendar::handlers::get_holidays,
+        modules::calendar::handlers::fetch_holidays,
+        modules::calendar::handlers::get_events,
+        modules::calendar::handlers::create_events,
+        modules::calendar::handlers::update_event,
+        modules::calendar::handlers::delete_event
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -119,23 +119,23 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<modules::work_logs::dtos::WorkLogResponse>,
         // ================================
 
-        // ==== Work Days ====
-        modules::work_days::dtos::FetchHolidayRequest,
-        modules::work_days::dtos::FetchHolidayResult,
-        modules::work_days::dtos::HolidayResponse,
-        modules::work_days::dtos::HolidayListResponse,
-        modules::work_days::dtos::HolidayStats,
-        modules::work_days::dtos::NextHolidayInfo,
-        modules::work_days::dtos::CreateEventRequest,
-        modules::work_days::dtos::UpdateEventRequest,
-        modules::work_days::dtos::EventResponse,
-        modules::work_days::dtos::EventListResponse,
-        modules::work_days::models::Holiday,
-        core::response::ApiResponse<modules::work_days::dtos::FetchHolidayResult>,
-        core::response::ApiResponse<modules::work_days::dtos::HolidayListResponse>,
-        core::response::ApiResponse<Vec<modules::work_days::dtos::EventResponse>>,
-        core::response::ApiResponse<modules::work_days::dtos::EventListResponse>,
-        core::response::ApiResponse<modules::work_days::dtos::EventResponse>,
+        // ==== Calendar ====
+        modules::calendar::dtos::FetchHolidayRequest,
+        modules::calendar::dtos::FetchHolidayResult,
+        modules::calendar::dtos::HolidayResponse,
+        modules::calendar::dtos::HolidayListResponse,
+        modules::calendar::dtos::HolidayStats,
+        modules::calendar::dtos::NextHolidayInfo,
+        modules::calendar::dtos::CreateEventRequest,
+        modules::calendar::dtos::UpdateEventRequest,
+        modules::calendar::dtos::EventResponse,
+        modules::calendar::dtos::EventListResponse,
+        modules::calendar::models::Holiday,
+        core::response::ApiResponse<modules::calendar::dtos::FetchHolidayResult>,
+        core::response::ApiResponse<modules::calendar::dtos::HolidayListResponse>,
+        core::response::ApiResponse<Vec<modules::calendar::dtos::EventResponse>>,
+        core::response::ApiResponse<modules::calendar::dtos::EventListResponse>,
+        core::response::ApiResponse<modules::calendar::dtos::EventResponse>,
         // ================================
     )),
     tags(
@@ -144,7 +144,7 @@ use utoipa::{Modify, OpenApi};
         (name = "Users", description = "User Management"),
         (name = "Properties", description = "Property Type and Option Management"),
         (name = "Work Logs", description = "Work Log Management"),
-        (name = "Work Days", description = "Work Days & Holiday Management")
+        (name = "Calendar", description = "Calendar & Holiday Management")
     ),
     servers(
         (url = "/v1", description = "Core API v1")

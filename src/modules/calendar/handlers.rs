@@ -4,20 +4,20 @@ use uuid::Uuid;
 use crate::{
     AppState,
     core::{errors::AppError, extractors::ValidatedJson, jwt::Claims, response::ApiResponse},
-    modules::work_days::{
+    modules::calendar::{
         dtos::{
             BotHolidayResponse, CreateEventRequest, EventFilterQuery, EventListResponse,
             EventResponse, FetchHolidayRequest, FetchHolidayResult, HolidayFilterQuery,
             HolidayListResponse, UpdateEventRequest,
         },
-        services::WorkDayService,
+        services::CalendarService,
     },
 };
 
 #[utoipa::path(
     get,
-    path = "/work-days/holidays",
-    tag = "Work Days",
+    path = "/calendar/holidays",
+    tag = "Calendar",
     params(HolidayFilterQuery),
     security(("bearerAuth" = [])),
     responses(
@@ -34,15 +34,15 @@ pub async fn get_holidays(
         .get()
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
-    let data = WorkDayService::get_holidays(&mut conn, filters.year)?;
+    let data = CalendarService::get_holidays(&mut conn, filters.year)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลวันหยุดสำเร็จ", data)))
 }
 
 #[utoipa::path(
     post,
-    path = "/work-days/holiday-fetch",
-    tag = "Work Days",
+    path = "/calendar/holiday-fetch",
+    tag = "Calendar",
     request_body = FetchHolidayRequest,
     security(("bearerAuth" = [])),
     responses(
@@ -70,7 +70,7 @@ pub async fn fetch_holidays(
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
     let result =
-        WorkDayService::save_holidays(&mut conn, bot_response.holiday_calendar_lists)?;
+        CalendarService::save_holidays(&mut conn, bot_response.holiday_calendar_lists)?;
 
     Ok((
         StatusCode::CREATED,
@@ -80,8 +80,8 @@ pub async fn fetch_holidays(
 
 #[utoipa::path(
     delete,
-    path = "/work-days/events/{event_id}",
-    tag = "Work Days",
+    path = "/calendar/events/{event_id}",
+    tag = "Calendar",
     params(("event_id" = Uuid, Path, description = "Event ID")),
     security(("bearerAuth" = [])),
     responses(
@@ -101,15 +101,15 @@ pub async fn delete_event(
         .get()
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
-    WorkDayService::delete_event(&mut conn, event_id, claims.sub)?;
+    CalendarService::delete_event(&mut conn, event_id, claims.sub)?;
 
     Ok(StatusCode::NO_CONTENT)
 }
 
 #[utoipa::path(
     put,
-    path = "/work-days/events/{event_id}",
-    tag = "Work Days",
+    path = "/calendar/events/{event_id}",
+    tag = "Calendar",
     request_body = UpdateEventRequest,
     params(("event_id" = Uuid, Path, description = "Event ID")),
     security(("bearerAuth" = [])),
@@ -132,15 +132,15 @@ pub async fn update_event(
         .get()
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
-    let result = WorkDayService::update_event(&mut conn, event_id, &payload, claims.sub)?;
+    let result = CalendarService::update_event(&mut conn, event_id, &payload, claims.sub)?;
 
     Ok(Json(ApiResponse::success(200, "แก้ไข event สำเร็จ", result)))
 }
 
 #[utoipa::path(
     get,
-    path = "/work-days/events",
-    tag = "Work Days",
+    path = "/calendar/events",
+    tag = "Calendar",
     params(EventFilterQuery),
     security(("bearerAuth" = [])),
     responses(
@@ -159,15 +159,15 @@ pub async fn get_events(
         .get()
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
-    let data = WorkDayService::get_events(&mut conn, claims.sub, filters)?;
+    let data = CalendarService::get_events(&mut conn, claims.sub, filters)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูล events สำเร็จ", data)))
 }
 
 #[utoipa::path(
     post,
-    path = "/work-days/events",
-    tag = "Work Days",
+    path = "/calendar/events",
+    tag = "Calendar",
     request_body = CreateEventRequest,
     security(("bearerAuth" = [])),
     responses(
@@ -186,7 +186,7 @@ pub async fn create_events(
         .get()
         .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
 
-    let result = WorkDayService::create_events(&mut conn, &payload, claims.sub)?;
+    let result = CalendarService::create_events(&mut conn, &payload, claims.sub)?;
 
     Ok((
         StatusCode::CREATED,

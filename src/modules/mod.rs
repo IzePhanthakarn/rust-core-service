@@ -2,5 +2,5 @@ pub mod auth;
 pub mod health;
 pub mod properties;
 pub mod users;
-pub mod work_days;
+pub mod calendar;
 pub mod work_logs;

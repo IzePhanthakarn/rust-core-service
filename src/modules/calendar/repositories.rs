@@ -1,5 +1,5 @@
 use crate::{
-    modules::work_days::models::{Event, Holiday, NewEvent, NewHoliday, UpdateEvent},
+    modules::calendar::models::{Event, Holiday, NewEvent, NewHoliday, UpdateEvent},
     schema::{events, holidays},
 };
 use diesel::prelude::*;

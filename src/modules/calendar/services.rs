@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     core::errors::AppError,
-    modules::work_days::{
+    modules::calendar::{
         dtos::{
             BotHolidayItem, CreateEventRequest, EventFilterQuery, EventListResponse, EventResponse,
             FetchHolidayResult, HolidayListResponse, HolidayResponse, HolidayStats,
@@ -18,9 +18,9 @@ use crate::{
     },
 };
 
-pub struct WorkDayService;
+pub struct CalendarService;
 
-impl WorkDayService {
+impl CalendarService {
     pub fn save_holidays(
         conn: &mut PgConnection,
         items: Vec<BotHolidayItem>,
