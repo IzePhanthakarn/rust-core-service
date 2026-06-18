@@ -42,11 +42,7 @@ pub async fn get_users(
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้".to_string()));
     }
 
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database Error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let data = UserService::get_all_users(&mut conn, filters)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
@@ -63,10 +59,7 @@ pub async fn get_me(
     State(state): State<AppState>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<MeResponse>>, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+    let mut conn = state.get_conn()?;
 
     let (user, profile) = UserRepository::get_user_with_profile(&mut conn, claims.sub)
         .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งาน".to_string()))?;
@@ -98,15 +91,10 @@ pub async fn update_me(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<UpdateProfileRequest>,
 ) -> Result<Json<ApiResponse<MeResponse>>, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+    let mut conn = state.get_conn()?;
 
-    // ใช้ UserService ที่เราคลีนไว้แล้ว
     let updated_profile = UserService::update_profile(&mut conn, claims.sub, &payload)?;
 
-    // ใช้ Repository ดึงข้อมูล User กลับมา (แทนการเขียน diesel filter ตรงๆ ใน Handler)
     let (user, _) = UserRepository::get_user_with_profile(&mut conn, claims.sub)
         .map_err(|_| AppError::BadRequest("ไม่พบบัญชีผู้ใช้งานของคุณในระบบ".to_string()))?;
 
@@ -118,11 +106,7 @@ pub async fn update_me(
         role: user.role,
     };
 
-    Ok(Json(ApiResponse::success(
-        200,
-        "อัปเดตข้อมูลโปรไฟล์สำเร็จ",
-        data,
-    )))
+    Ok(Json(ApiResponse::success(200, "อัปเดตข้อมูลโปรไฟล์สำเร็จ", data)))
 }
 
 #[utoipa::path(
@@ -156,18 +140,10 @@ pub async fn update_user_status(
         ));
     }
 
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
-
-    // เรียกผ่าน UserService
+    let mut conn = state.get_conn()?;
     UserService::update_user_status(&mut conn, target_user_id, &payload.status)?;
 
-    Ok(Json(ApiResponse::success_without_data(
-        200,
-        "เปลี่ยนสถานะผู้ใช้สำเร็จ",
-    )))
+    Ok(Json(ApiResponse::success_without_data(200, "เปลี่ยนสถานะผู้ใช้สำเร็จ")))
 }
 
 #[utoipa::path(
@@ -193,10 +169,7 @@ pub async fn get_user_by_id(
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้อื่น".to_string()));
     }
 
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
+    let mut conn = state.get_conn()?;
 
     let (user, profile) = UserRepository::get_user_with_profile(&mut conn, target_user_id)
         .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งานนี้ในระบบ".to_string()))?;
@@ -237,21 +210,11 @@ pub async fn delete_user_by_id(
     }
 
     if claims.sub == target_user_id {
-        return Err(AppError::BadRequest(
-            "คุณไม่สามารถลบบัญชีของตัวเองได้".to_string(),
-        ));
+        return Err(AppError::BadRequest("คุณไม่สามารถลบบัญชีของตัวเองได้".to_string()));
     }
 
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("DB Error".to_string()))?;
-
-    // เรียกผ่าน UserService
+    let mut conn = state.get_conn()?;
     UserService::delete_user(&mut conn, target_user_id)?;
 
-    Ok(Json(ApiResponse::success_without_data(
-        200,
-        "ลบบัญชีผู้ใช้งานออกจากระบบสำเร็จ",
-    )))
+    Ok(Json(ApiResponse::success_without_data(200, "ลบบัญชีผู้ใช้งานออกจากระบบสำเร็จ")))
 }

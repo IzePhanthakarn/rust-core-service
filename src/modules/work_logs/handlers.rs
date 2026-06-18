@@ -33,11 +33,7 @@ pub async fn get_all_work_logs(
     Query(filters): Query<WorkLogFilterQuery>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<WorkLogListResponse>>, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let data = WorkLogService::get_all_work_logs(&mut conn, claims.sub, filters)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
@@ -58,21 +54,10 @@ pub async fn get_one_work_log(
     Extension(claims): Extension<Claims>,
     Path(work_log_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<WorkLogResponse>>), AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let work_log = WorkLogService::find_one_work_log(&mut conn, work_log_id, claims.sub)?;
 
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse::success(
-            200,
-            "Work Log found successfully",
-            work_log,
-        )),
-    ))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Work Log found successfully", work_log))))
 }
 
 #[utoipa::path(
@@ -91,11 +76,7 @@ pub async fn create_work_log(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<CreateWorkLogRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<WorkLogResponse>>), AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let result = WorkLogService::create_work_log(&mut conn, &payload, claims.sub)?;
 
     Ok((
@@ -125,17 +106,10 @@ pub async fn update_work_log(
         return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Work Log นี้".to_string()));
     }
 
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let result = WorkLogService::update_work_log(&mut conn, &payload, claims.sub, work_log_id)?;
 
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse::success(200, "แก้ไข Work Log สำเร็จ", result)),
-    ))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "แก้ไข Work Log สำเร็จ", result))))
 }
 
 #[utoipa::path(
@@ -153,15 +127,8 @@ pub async fn delete_work_log(
     Extension(claims): Extension<Claims>,
     Path(work_log_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     WorkLogService::delete_work_log(&mut conn, work_log_id, claims.sub)?;
 
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse::success_without_data(200, "ลบ Work Log สำเร็จ")),
-    ))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Work Log สำเร็จ"))))
 }

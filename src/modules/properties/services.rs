@@ -1,9 +1,9 @@
 use diesel::PgConnection;
-use diesel::result::Error as DieselError;
 use log::debug;
 use uuid::Uuid;
 
-use crate::core::response::PaginatedData;
+use crate::core::errors::map_diesel_error;
+use crate::core::response::{PaginatedData, normalize_page_limit};
 use crate::modules::properties::dtos::{PropertyFilterQuery, PropertyOptionData, PropertyTypeData};
 use crate::modules::properties::models::{UpdatePropertyOption, UpdatePropertyType};
 use crate::{
@@ -22,39 +22,26 @@ impl PropertyService {
         conn: &mut PgConnection,
         filters: PropertyFilterQuery,
     ) -> Result<PaginatedData<PropertyTypeData>, AppError> {
-        // Implementation for retrieving a property type
-        let page = filters.page.unwrap_or(1).max(1);
-        let limit = filters.limit.unwrap_or(10).clamp(1, 100);
+        let (page, limit) = normalize_page_limit(filters.page, filters.limit);
 
         let (items, total_items) =
             PropertyRepository::get_all_property(conn, page, limit, filters.name, filters.code)
                 .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
-        let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
-
-        Ok(PaginatedData {
-            items,
-            total_items,
-            total_pages,
-            current_page: page,
-        })
+        Ok(PaginatedData::new(items, total_items, page, limit))
     }
 
     pub fn get_one_property_type(
         conn: &mut PgConnection,
         property_id: Uuid,
     ) -> Result<PropertyResponse, AppError> {
-        let property_data =
-            PropertyRepository::get_one_property_type(conn, property_id).map_err(|e| {
+        let property_data = PropertyRepository::get_one_property_type(conn, property_id)
+            .map_err(|e| {
                 debug!("Database Error: {:?}", e);
-                match e {
-                    DieselError::NotFound => {
-                        AppError::NotFound("ไม่พบ Property Type ที่ระบุ".to_string())
-                    }
-                    _ => {
-                        AppError::InternalServerError("ไม่สามารถดึงข้อมูล Property Type ได้".to_string())
-                    }
-                }
+                map_diesel_error(
+                    "ไม่พบ Property Type ที่ระบุ",
+                    "ไม่สามารถดึงข้อมูล Property Type ได้",
+                )(e)
             })?;
 
         Ok(PropertyResponse::from_tuple(property_data))
@@ -68,14 +55,10 @@ impl PropertyService {
         let property_data =
             PropertyRepository::get_one_property_type_by_code(conn, &upper_code).map_err(|e| {
                 debug!("Database Error: {:?}", e);
-                match e {
-                    DieselError::NotFound => {
-                        AppError::NotFound("ไม่พบ Property Type ที่ระบุ".to_string())
-                    }
-                    _ => {
-                        AppError::InternalServerError("ไม่สามารถดึงข้อมูล Property Type ได้".to_string())
-                    }
-                }
+                map_diesel_error(
+                    "ไม่พบ Property Type ที่ระบุ",
+                    "ไม่สามารถดึงข้อมูล Property Type ได้",
+                )(e)
             })?;
 
         Ok(PropertyResponse::from_tuple(property_data))
@@ -88,7 +71,6 @@ impl PropertyService {
         description: Option<String>,
         created_by: Uuid,
     ) -> Result<PropertyType, AppError> {
-        // Implementation for creating a property type
         let upper_code = code.trim().to_ascii_uppercase();
 
         let existing_name = PropertyRepository::find_by_name(conn, name)
@@ -119,12 +101,11 @@ impl PropertyService {
             updated_by: created_by,
         };
 
-        let result = PropertyRepository::create_property_type(conn, new_property).map_err(|e| {
-            println!("Database Error: {:?}", e);
-
-            AppError::InternalServerError("ไม่สามารถสร้าง Property Type ใหม่ได้".to_string())
-        })?;
-        Ok(result)
+        PropertyRepository::create_property_type(conn, new_property)
+            .map_err(|e| {
+                eprintln!("Database Error: {:?}", e);
+                AppError::InternalServerError("ไม่สามารถสร้าง Property Type ใหม่ได้".to_string())
+            })
     }
 
     pub fn update_property_type(
@@ -165,12 +146,10 @@ impl PropertyService {
             updated_by,
         };
 
-        let result =
-            PropertyRepository::update_property_type(conn, updated_property).map_err(|e| {
-                println!("Database Error: {:?}", e);
-                AppError::InternalServerError("ไม่สามารถอัปเดต Property Type ได้".to_string())
-            })?;
-        Ok(result)
+        PropertyRepository::update_property_type(conn, updated_property).map_err(|e| {
+            eprintln!("Database Error: {:?}", e);
+            AppError::InternalServerError("ไม่สามารถอัปเดต Property Type ได้".to_string())
+        })
     }
 
     pub fn delete_property_type(
@@ -197,7 +176,7 @@ impl PropertyService {
         let is_have_option_value =
             PropertyRepository::check_property_options(conn, property_type_id, &value).map_err(
                 |e| {
-                    println!("Database Error: {:?}", e);
+                    eprintln!("Database Error: {:?}", e);
                     AppError::InternalServerError("ไม่สามารถตรวจสอบ Property Option ได้".to_string())
                 },
             )?;
@@ -210,12 +189,11 @@ impl PropertyService {
         }
 
         let count_options =
-            PropertyRepository::count_options_by_property_type_id(conn, property_type_id).map_err(
-                |e| {
-                    println!("Database Error: {:?}", e);
+            PropertyRepository::count_options_by_property_type_id(conn, property_type_id)
+                .map_err(|e| {
+                    eprintln!("Database Error: {:?}", e);
                     AppError::InternalServerError("ไม่สามารถนับจำนวน Property Option ได้".to_string())
-                },
-            )?;
+                })?;
 
         let new_option = NewPropertyOption {
             property_type_id,
@@ -225,11 +203,11 @@ impl PropertyService {
             is_active: true,
             created_by,
         };
-        let result = PropertyRepository::create_property_option(conn, new_option).map_err(|e| {
-            println!("Database Error: {:?}", e);
+
+        PropertyRepository::create_property_option(conn, new_option).map_err(|e| {
+            eprintln!("Database Error: {:?}", e);
             AppError::InternalServerError("ไม่สามารถสร้าง Property Option ใหม่ได้".to_string())
-        })?;
-        Ok(result)
+        })
     }
 
     pub fn update_property_is_active(
@@ -237,13 +215,11 @@ impl PropertyService {
         property_option_id: Uuid,
         is_active: bool,
     ) -> Result<PropertyOptionData, AppError> {
-        let result =
-            PropertyRepository::update_property_is_active(conn, property_option_id, is_active)
-                .map_err(|e| {
-                    println!("Database Error: {:?}", e);
-                    AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string())
-                })?;
-        Ok(result)
+        PropertyRepository::update_property_is_active(conn, property_option_id, is_active)
+            .map_err(|e| {
+                eprintln!("Database Error: {:?}", e);
+                AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string())
+            })
     }
 
     pub fn update_property_option(
@@ -261,15 +237,11 @@ impl PropertyService {
             is_active,
         };
 
-        PropertyRepository::update_property_option(conn, id, changeset).map_err(|e| {
-            println!("Database Error: {:?}", e);
-            match e {
-                diesel::result::Error::NotFound => {
-                    AppError::NotFound("ไม่พบ Property Option ที่ระบุ".to_string())
-                }
-                _ => AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string()),
-            }
-        })
+        PropertyRepository::update_property_option(conn, id, changeset)
+            .map_err(map_diesel_error(
+                "ไม่พบ Property Option ที่ระบุ",
+                "ไม่สามารถอัปเดต Property Option ได้",
+            ))
     }
 
     pub fn delete_property_option(
@@ -282,9 +254,7 @@ impl PropertyService {
             })?;
 
         if updated_rows == 0 {
-            return Err(AppError::BadRequest(
-                "ไม่พบ Property Option ที่ต้องการลบ".to_string(),
-            ));
+            return Err(AppError::BadRequest("ไม่พบ Property Option ที่ต้องการลบ".to_string()));
         }
 
         Ok(())

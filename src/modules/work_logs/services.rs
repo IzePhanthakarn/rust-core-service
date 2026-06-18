@@ -4,6 +4,7 @@ use diesel::Connection;
 use diesel::PgConnection;
 use uuid::Uuid;
 
+use crate::core::response::normalize_page_limit;
 use crate::modules::work_logs::dtos::UpdateWorkLogRequest;
 use crate::modules::work_logs::dtos::WorkLogFilterQuery;
 use crate::modules::work_logs::dtos::WorkLogListResponse;
@@ -24,8 +25,7 @@ impl WorkLogService {
         user_id: Uuid,
         filters: WorkLogFilterQuery,
     ) -> Result<WorkLogListResponse, AppError> {
-        let page = filters.page.unwrap_or(1).max(1);
-        let limit = filters.limit.unwrap_or(10).clamp(1, 100);
+        let (page, limit) = normalize_page_limit(filters.page, filters.limit);
 
         let (items, total_items, all_work_logs, monthly_mood_score, monthly_productivity_score) =
             WorkLogRepository::find_all_work_logs(
@@ -61,6 +61,7 @@ impl WorkLogService {
     ) -> Result<WorkLogResponse, AppError> {
         let work_log = WorkLogRepository::find_one_work_log(conn, work_log_id)
             .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
+
         if user_id != work_log.user_id {
             return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Work Log นี้".to_string()));
         }
@@ -70,7 +71,7 @@ impl WorkLogService {
                 AppError::InternalServerError("Failed to find work log tags".to_string())
             })?;
 
-        let work_log_response = WorkLogResponse {
+        Ok(WorkLogResponse {
             user_id: work_log.user_id,
             id: work_log.id,
             title: work_log.title,
@@ -81,9 +82,7 @@ impl WorkLogService {
             created_at: work_log.created_at,
             updated_at: work_log.updated_at,
             tags: work_log_tags,
-        };
-
-        Ok(work_log_response)
+        })
     }
 
     pub fn create_work_log(
@@ -115,13 +114,10 @@ impl WorkLogService {
 
             let saved_log = WorkLogRepository::create_work_log(conn, &new_work_log)?;
 
-            let tags = Self::normalize_tags(&work_log.tags);
+            let tags = normalize_tags(&work_log.tags);
             let new_tags: Vec<NewWorkLogTag<'_>> = tags
                 .iter()
-                .map(|tag| NewWorkLogTag {
-                    log_id: saved_log.id,
-                    work_tag: tag,
-                })
+                .map(|tag| NewWorkLogTag { log_id: saved_log.id, work_tag: tag })
                 .collect();
 
             let tags = WorkLogRepository::create_work_log_tags(conn, &new_tags)?;
@@ -149,6 +145,7 @@ impl WorkLogService {
     ) -> Result<WorkLogResponse, AppError> {
         let find_work_log = WorkLogRepository::find_one_work_log(conn, work_log_id)
             .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
+
         if user_id != find_work_log.user_id {
             return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Work Log นี้".to_string()));
         }
@@ -165,15 +162,12 @@ impl WorkLogService {
 
             let saved_log = WorkLogRepository::update_work_log(conn, work_log_id, &new_work_log)?;
 
-            let tags = Self::normalize_tags(&work_log.tags);
+            let tags = normalize_tags(&work_log.tags);
             WorkLogRepository::delete_work_log_tags(conn, saved_log.id)?;
 
             let new_tags: Vec<NewWorkLogTag<'_>> = tags
                 .iter()
-                .map(|tag| NewWorkLogTag {
-                    log_id: saved_log.id,
-                    work_tag: tag,
-                })
+                .map(|tag| NewWorkLogTag { log_id: saved_log.id, work_tag: tag })
                 .collect();
 
             let tags = WorkLogRepository::create_work_log_tags(conn, &new_tags)?;
@@ -204,28 +198,28 @@ impl WorkLogService {
         if work_log.user_id != user_id {
             return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ Work Log นี้".to_string()));
         }
+
         conn.transaction::<(), AppError, _>(|conn| {
             WorkLogRepository::delete_work_log(conn, work_log_id)?;
             Ok(())
         })
     }
 
-    fn normalize_tags(tags: &[String]) -> Vec<&str> {
-        let mut seen = HashSet::with_capacity(tags.len());
-        let mut normalized = Vec::with_capacity(tags.len());
-
-        for tag in tags {
-            let tag = tag.trim();
-
-            if seen.insert(tag) {
-                normalized.push(tag);
-            }
-        }
-
-        normalized
-    }
-
     fn round_to_two_decimal_places(value: f64) -> f64 {
         (value * 100.0).round() / 100.0
     }
+}
+
+fn normalize_tags(tags: &[String]) -> Vec<&str> {
+    let mut seen = HashSet::with_capacity(tags.len());
+    let mut normalized = Vec::with_capacity(tags.len());
+
+    for tag in tags {
+        let tag = tag.trim();
+        if seen.insert(tag) {
+            normalized.push(tag);
+        }
+    }
+
+    normalized
 }

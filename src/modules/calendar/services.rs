@@ -13,7 +13,7 @@ use crate::{
             FetchHolidayResult, HolidayListResponse, HolidayResponse, HolidayStats,
             NextHolidayInfo, UpdateEventRequest,
         },
-        models::{NewEvent, NewHoliday, UpdateEvent},
+        models::{Event, NewEvent, NewHoliday, UpdateEvent},
         repositories::{EventRepository, HolidayRepository},
     },
 };
@@ -74,7 +74,6 @@ impl CalendarService {
             .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูลวันหยุดได้".to_string()))?;
 
         let current_month = now.month();
-
         let total_holidays_this_year = holidays.len() as i64;
 
         let total_holidays_this_month = holidays
@@ -82,18 +81,14 @@ impl CalendarService {
             .filter(|h| h.holiday_date.month() == current_month)
             .count() as i64;
 
-        let next_upcoming_holiday = holidays
-            .iter()
-            .find(|h| h.holiday_date > now)
-            .map(|h| {
-                let days_until =
-                    (h.holiday_date.date_naive() - now.date_naive()).num_days();
-                NextHolidayInfo {
-                    holiday_description: h.holiday_description.clone(),
-                    holiday_date: h.holiday_date,
-                    days_until,
-                }
-            });
+        let next_upcoming_holiday = holidays.iter().find(|h| h.holiday_date > now).map(|h| {
+            let days_until = (h.holiday_date.date_naive() - now.date_naive()).num_days();
+            NextHolidayInfo {
+                holiday_description: h.holiday_description.clone(),
+                holiday_date: h.holiday_date,
+                days_until,
+            }
+        });
 
         let remaining_holidays_this_year =
             holidays.iter().filter(|h| h.holiday_date > now).count() as i64;
@@ -126,25 +121,18 @@ impl CalendarService {
         claims_user_id: Uuid,
     ) -> Result<EventResponse, AppError> {
         if payload.user_id != claims_user_id {
-            return Err(AppError::Forbidden(
-                "คุณไม่มีสิทธิ์แก้ไข event นี้".to_string(),
-            ));
+            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข event นี้".to_string()));
         }
 
         if payload.end_date <= payload.start_date {
-            return Err(AppError::BadRequest(
-                "end_date ต้องมาหลัง start_date".to_string(),
-            ));
+            return Err(AppError::BadRequest("end_date ต้องมาหลัง start_date".to_string()));
         }
 
-        let existing = EventRepository::find_by_id(conn, event_id).map_err(|_| {
-            AppError::NotFound("ไม่พบ event ที่ต้องการแก้ไข".to_string())
-        })?;
+        let existing = EventRepository::find_by_id(conn, event_id)
+            .map_err(|_| AppError::NotFound("ไม่พบ event ที่ต้องการแก้ไข".to_string()))?;
 
         if existing.user_id != claims_user_id {
-            return Err(AppError::Forbidden(
-                "คุณไม่มีสิทธิ์แก้ไข event นี้".to_string(),
-            ));
+            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข event นี้".to_string()));
         }
 
         let changes = UpdateEvent {
@@ -156,22 +144,10 @@ impl CalendarService {
             updated_at: Utc::now(),
         };
 
-        let updated = EventRepository::update(conn, event_id, changes).map_err(|_| {
-            AppError::InternalServerError("ไม่สามารถแก้ไข event ได้".to_string())
-        })?;
+        let updated = EventRepository::update(conn, event_id, changes)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถแก้ไข event ได้".to_string()))?;
 
-        let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
-        Ok(EventResponse {
-            date: updated.end_date.with_timezone(&bkk).format("%Y-%m-%d").to_string(),
-            time: updated.start_date.with_timezone(&bkk).format("%H:%M").to_string(),
-            id: updated.id,
-            user_id: updated.user_id,
-            title: updated.title,
-            description: updated.description,
-            start_date: updated.start_date,
-            end_date: updated.end_date,
-            tag: updated.tag,
-        })
+        Ok(event_to_response(updated))
     }
 
     pub fn delete_event(
@@ -221,26 +197,7 @@ impl CalendarService {
             .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูล event ได้".to_string()))?;
 
         let total_events = events.len() as i64;
-
-        let items = events
-            .into_iter()
-            .map(|e| {
-                let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
-                let end_local = e.end_date.with_timezone(&bkk);
-                let start_local = e.start_date.with_timezone(&bkk);
-                EventResponse {
-                    date: end_local.format("%Y-%m-%d").to_string(),
-                    time: start_local.format("%H:%M").to_string(),
-                    id: e.id,
-                    user_id: e.user_id,
-                    title: e.title,
-                    description: e.description,
-                    start_date: e.start_date,
-                    end_date: e.end_date,
-                    tag: e.tag,
-                }
-            })
-            .collect();
+        let items = events.into_iter().map(event_to_response).collect();
 
         Ok(EventListResponse { items, total_events })
     }
@@ -251,36 +208,30 @@ impl CalendarService {
         user_id: Uuid,
     ) -> Result<Vec<EventResponse>, AppError> {
         if payload.end_date <= payload.start_date {
-            return Err(AppError::BadRequest(
-                "end_date ต้องมาหลัง start_date".to_string(),
-            ));
+            return Err(AppError::BadRequest("end_date ต้องมาหลัง start_date".to_string()));
         }
 
         let new_events = split_into_daily_events(user_id, payload);
 
-        let created = EventRepository::insert_batch(conn, new_events).map_err(|_| {
-            AppError::InternalServerError("ไม่สามารถบันทึก event ได้".to_string())
-        })?;
+        let created = EventRepository::insert_batch(conn, new_events)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถบันทึก event ได้".to_string()))?;
 
-        Ok(created
-            .into_iter()
-            .map(|e| {
-                let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
-                let end_local = e.end_date.with_timezone(&bkk);
-                let start_local = e.start_date.with_timezone(&bkk);
-                EventResponse {
-                    date: end_local.format("%Y-%m-%d").to_string(),
-                    time: start_local.format("%H:%M").to_string(),
-                    id: e.id,
-                    user_id: e.user_id,
-                    title: e.title,
-                    description: e.description,
-                    start_date: e.start_date,
-                    end_date: e.end_date,
-                    tag: e.tag,
-                }
-            })
-            .collect())
+        Ok(created.into_iter().map(event_to_response).collect())
+    }
+}
+
+fn event_to_response(e: Event) -> EventResponse {
+    let bkk = FixedOffset::east_opt(7 * 3600).unwrap();
+    EventResponse {
+        date: e.end_date.with_timezone(&bkk).format("%Y-%m-%d").to_string(),
+        time: e.start_date.with_timezone(&bkk).format("%H:%M").to_string(),
+        id: e.id,
+        user_id: e.user_id,
+        title: e.title,
+        description: e.description,
+        start_date: e.start_date,
+        end_date: e.end_date,
+        tag: e.tag,
     }
 }
 

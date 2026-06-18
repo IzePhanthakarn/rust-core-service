@@ -29,11 +29,7 @@ pub async fn get_holidays(
     State(state): State<AppState>,
     Query(filters): Query<HolidayFilterQuery>,
 ) -> Result<Json<ApiResponse<HolidayListResponse>>, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let data = CalendarService::get_holidays(&mut conn, filters.year)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลวันหยุดสำเร็จ", data)))
@@ -60,22 +56,12 @@ pub async fn fetch_holidays(
         .map_err(|_| AppError::BadRequest("ไม่สามารถเชื่อมต่อ URL ที่ระบุได้".to_string()))?
         .json::<BotHolidayResponse>()
         .await
-        .map_err(|_| {
-            AppError::InternalServerError("รูปแบบข้อมูลจาก URL ไม่ถูกต้อง".to_string())
-        })?;
+        .map_err(|_| AppError::InternalServerError("รูปแบบข้อมูลจาก URL ไม่ถูกต้อง".to_string()))?;
 
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
+    let mut conn = state.get_conn()?;
+    let result = CalendarService::save_holidays(&mut conn, bot_response.holiday_calendar_lists)?;
 
-    let result =
-        CalendarService::save_holidays(&mut conn, bot_response.holiday_calendar_lists)?;
-
-    Ok((
-        StatusCode::CREATED,
-        Json(ApiResponse::success(201, "บันทึกวันหยุดสำเร็จ", result)),
-    ))
+    Ok((StatusCode::CREATED, Json(ApiResponse::success(201, "บันทึกวันหยุดสำเร็จ", result))))
 }
 
 #[utoipa::path(
@@ -96,11 +82,7 @@ pub async fn delete_event(
     Extension(claims): Extension<Claims>,
     Path(event_id): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     CalendarService::delete_event(&mut conn, event_id, claims.sub)?;
 
     Ok(StatusCode::NO_CONTENT)
@@ -127,11 +109,7 @@ pub async fn update_event(
     Path(event_id): Path<Uuid>,
     ValidatedJson(payload): ValidatedJson<UpdateEventRequest>,
 ) -> Result<Json<ApiResponse<EventResponse>>, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let result = CalendarService::update_event(&mut conn, event_id, &payload, claims.sub)?;
 
     Ok(Json(ApiResponse::success(200, "แก้ไข event สำเร็จ", result)))
@@ -154,11 +132,7 @@ pub async fn get_events(
     Extension(claims): Extension<Claims>,
     Query(filters): Query<EventFilterQuery>,
 ) -> Result<Json<ApiResponse<EventListResponse>>, AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let data = CalendarService::get_events(&mut conn, claims.sub, filters)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูล events สำเร็จ", data)))
@@ -181,15 +155,8 @@ pub async fn create_events(
     Extension(claims): Extension<Claims>,
     ValidatedJson(payload): ValidatedJson<CreateEventRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<Vec<EventResponse>>>), AppError> {
-    let mut conn = state
-        .db_pool
-        .get()
-        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
-
+    let mut conn = state.get_conn()?;
     let result = CalendarService::create_events(&mut conn, &payload, claims.sub)?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง event สำเร็จ", result)),
-    ))
+    Ok((StatusCode::CREATED, Json(ApiResponse::success(201, "สร้าง event สำเร็จ", result))))
 }

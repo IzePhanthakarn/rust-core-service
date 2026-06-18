@@ -148,12 +148,10 @@ impl PropertyRepository {
     }
 
     pub fn delete_property_type(conn: &mut PgConnection, property_id: Uuid) -> QueryResult<usize> {
-        // Implementation for deleting a property type
         diesel::delete(property_types::table.filter(property_types::id.eq(property_id)))
             .execute(conn)
     }
 
-    // ฟังก์ชันเช็คว่า properties_id นั้นมี value ใน property_options หรือยัง
     pub fn check_property_options(
         conn: &mut PgConnection,
         property_id: Uuid,

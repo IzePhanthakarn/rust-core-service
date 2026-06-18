@@ -1,4 +1,4 @@
-use crate::core::{errors::AppError, response::PaginatedData};
+use crate::core::{errors::AppError, response::{PaginatedData, normalize_page_limit}};
 use crate::modules::users::dtos::{UpdateProfileRequest, UserFilterQuery};
 use crate::modules::users::models::{User, UserProfile, UserStatus};
 use crate::modules::users::repositories::UserRepository;
@@ -12,21 +12,13 @@ impl UserService {
         conn: &mut PgConnection,
         filters: UserFilterQuery,
     ) -> Result<PaginatedData<User>, AppError> {
-        let page = filters.page.unwrap_or(1).max(1);
-        let limit = filters.limit.unwrap_or(10).clamp(1, 100);
+        let (page, limit) = normalize_page_limit(filters.page, filters.limit);
 
         let (items, total_items) =
             UserRepository::get_all_users(conn, page, limit, filters.email, filters.status)
                 .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
-        let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
-
-        Ok(PaginatedData {
-            items,
-            total_items,
-            total_pages,
-            current_page: page,
-        })
+        Ok(PaginatedData::new(items, total_items, page, limit))
     }
 
     pub fn update_profile(
@@ -37,8 +29,10 @@ impl UserService {
         let profile =
             UserRepository::update_profile(conn, target_user_id, &req.first_name, &req.last_name)
                 .map_err(|_| {
-                AppError::InternalServerError("เกิดข้อผิดพลาดที่ระบบฐานข้อมูล ไม่สามารถอัปเดตได้".to_string())
-            })?;
+                    AppError::InternalServerError(
+                        "เกิดข้อผิดพลาดที่ระบบฐานข้อมูล ไม่สามารถอัปเดตได้".to_string(),
+                    )
+                })?;
 
         match profile {
             Some(p) => Ok(p),
@@ -55,7 +49,9 @@ impl UserService {
     ) -> Result<(), AppError> {
         let updated_rows = UserRepository::update_user_status(conn, target_user_id, new_status)
             .map_err(|_| {
-                AppError::InternalServerError("ระบบฐานข้อมูลขัดข้อง ไม่สามารถเปลี่ยนสถานะได้".to_string())
+                AppError::InternalServerError(
+                    "ระบบฐานข้อมูลขัดข้อง ไม่สามารถเปลี่ยนสถานะได้".to_string(),
+                )
             })?;
 
         if updated_rows == 0 {
@@ -80,7 +76,6 @@ impl UserService {
         Ok(())
     }
 
-    // ห่อหุ้มฟังก์ชันจาก Repository เพื่อให้ Auth Service/Handler เรียกใช้ง่ายๆ
     pub fn update_password(
         conn: &mut PgConnection,
         user_id: Uuid,

@@ -22,6 +22,14 @@ pub struct AppState {
     pub start_time: Instant,
 }
 
+impl AppState {
+    pub fn get_conn(&self) -> Result<config::database::DbConn, core::errors::AppError> {
+        self.db_pool
+            .get()
+            .map_err(|_| core::errors::AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string()))
+    }
+}
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();

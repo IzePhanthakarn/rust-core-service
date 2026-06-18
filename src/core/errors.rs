@@ -25,14 +25,11 @@ impl IntoResponse for AppError {
             AppError::InternalServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
 
-        // ==== ปรับ Logic การเลือก Status ====
-        // .is_client_error() จะเป็น true ถ้าเป็นเลข 400-499
         let body = if status.is_client_error() {
             Json(ApiResponse::<EmptyData>::fail(status.as_u16(), &message))
         } else {
             Json(ApiResponse::<EmptyData>::error(status.as_u16(), &message))
         };
-        // ===================================
 
         (status, body).into_response()
     }
@@ -41,21 +38,32 @@ impl IntoResponse for AppError {
 impl From<diesel::result::Error> for AppError {
     fn from(err: diesel::result::Error) -> Self {
         match err {
-            // ถ้าเป็น Not Found ให้แปลงเป็น AppError::NotFound
             diesel::result::Error::NotFound => {
                 AppError::NotFound("ข้อมูลที่ต้องการไม่พบในระบบ".to_string())
             }
-            // ถ้าเป็น Unique Violation (เช่น อีเมลซ้ำ) ให้แปลงเป็น Conflict
             diesel::result::Error::DatabaseError(
                 diesel::result::DatabaseErrorKind::UniqueViolation,
                 _,
             ) => AppError::Conflict("ข้อมูลนี้มีอยู่แล้วในระบบ".to_string()),
-            // อื่นๆ ให้ถือว่าเป็น Internal Server Error
             _ => {
-                // แนะนำ: ทำการ log ตัว err จริงๆ ไว้ด้วย เพื่อให้ Debug ง่ายขึ้น
                 eprintln!("Database Error: {:?}", err);
                 AppError::InternalServerError("เกิดข้อผิดพลาดจากฐานข้อมูล".to_string())
             }
+        }
+    }
+}
+
+pub fn map_diesel_error(
+    not_found_msg: impl Into<String>,
+    internal_msg: impl Into<String>,
+) -> impl Fn(diesel::result::Error) -> AppError {
+    let not_found = not_found_msg.into();
+    let internal = internal_msg.into();
+    move |e| match e {
+        diesel::result::Error::NotFound => AppError::NotFound(not_found.clone()),
+        _ => {
+            eprintln!("Database Error: {:?}", e);
+            AppError::InternalServerError(internal.clone())
         }
     }
 }
