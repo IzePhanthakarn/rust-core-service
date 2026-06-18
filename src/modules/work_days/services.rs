@@ -174,6 +174,24 @@ impl WorkDayService {
         })
     }
 
+    pub fn delete_event(
+        conn: &mut PgConnection,
+        event_id: Uuid,
+        claims_user_id: Uuid,
+    ) -> Result<(), AppError> {
+        let existing = EventRepository::find_by_id(conn, event_id)
+            .map_err(|_| AppError::NotFound("ไม่พบ event ที่ต้องการลบ".to_string()))?;
+
+        if existing.user_id != claims_user_id {
+            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ event นี้".to_string()));
+        }
+
+        EventRepository::delete_by_id(conn, event_id)
+            .map_err(|_| AppError::InternalServerError("ไม่สามารถลบ event ได้".to_string()))?;
+
+        Ok(())
+    }
+
     pub fn get_events(
         conn: &mut PgConnection,
         user_id: Uuid,

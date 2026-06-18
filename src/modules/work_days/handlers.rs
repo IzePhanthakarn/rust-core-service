@@ -1,4 +1,4 @@
-use axum::{Extension, Json, extract::{Path, Query, State}, http::StatusCode};
+use axum::{Extension, Json, extract::{Path, Query, State}, http::StatusCode, response::IntoResponse};
 use uuid::Uuid;
 
 use crate::{
@@ -76,6 +76,34 @@ pub async fn fetch_holidays(
         StatusCode::CREATED,
         Json(ApiResponse::success(201, "บันทึกวันหยุดสำเร็จ", result)),
     ))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/work-days/events/{event_id}",
+    tag = "Work Days",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 204, description = "ลบ event สำเร็จ"),
+        (status = 403, description = "ไม่มีสิทธิ์ลบ"),
+        (status = 404, description = "ไม่พบ event"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn delete_event(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(event_id): Path<Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    let mut conn = state
+        .db_pool
+        .get()
+        .map_err(|_| AppError::InternalServerError("Database connection error".to_string()))?;
+
+    WorkDayService::delete_event(&mut conn, event_id, claims.sub)?;
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[utoipa::path(

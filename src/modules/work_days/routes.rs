@@ -7,6 +7,6 @@ pub fn work_days_routes() -> Router<AppState> {
         .route("/holidays", get(handlers::get_holidays))
         .route("/holiday-fetch", post(handlers::fetch_holidays))
         .route("/events", get(handlers::get_events).post(handlers::create_events))
-        .route("/events/{event_id}", put(handlers::update_event))
+        .route("/events/{event_id}", put(handlers::update_event).delete(handlers::delete_event))
         .route_layer(middleware::from_fn(auth_guard))
 }

@@ -62,6 +62,10 @@ impl EventRepository {
             .get_result(conn)
     }
 
+    pub fn delete_by_id(conn: &mut PgConnection, event_id: uuid::Uuid) -> QueryResult<usize> {
+        diesel::delete(events::table.filter(events::id.eq(event_id))).execute(conn)
+    }
+
     pub fn find_all_by_user(
         conn: &mut PgConnection,
         user_id: uuid::Uuid,

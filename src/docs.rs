@@ -49,7 +49,8 @@ use utoipa::{Modify, OpenApi};
         modules::work_days::handlers::fetch_holidays,
         modules::work_days::handlers::get_events,
         modules::work_days::handlers::create_events,
-        modules::work_days::handlers::update_event
+        modules::work_days::handlers::update_event,
+        modules::work_days::handlers::delete_event
     ),
     components(schemas(
         // ==== Common Response Schemas ===
