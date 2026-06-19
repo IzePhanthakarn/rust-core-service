@@ -66,19 +66,32 @@ impl CalendarService {
     pub fn get_holidays(
         conn: &mut PgConnection,
         year: Option<String>,
+        month: Option<String>,
     ) -> Result<HolidayListResponse, AppError> {
         let now = Utc::now();
         let target_year = year.unwrap_or_else(|| now.year().to_string());
 
+        let target_month = month
+            .as_deref()
+            .map(|m| m.parse::<u32>())
+            .transpose()
+            .map_err(|_| AppError::BadRequest("month ต้องเป็นตัวเลข 1-12".to_string()))?;
+
+        if let Some(m) = target_month {
+            if !(1..=12).contains(&m) {
+                return Err(AppError::BadRequest("month ต้องอยู่ระหว่าง 1-12".to_string()));
+            }
+        }
+
         let holidays = HolidayRepository::find_all_by_year(conn, &target_year)
             .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูลวันหยุดได้".to_string()))?;
 
-        let current_month = now.month();
+        let stat_month = target_month.unwrap_or_else(|| now.month());
         let total_holidays_this_year = holidays.len() as i64;
 
         let total_holidays_this_month = holidays
             .iter()
-            .filter(|h| h.holiday_date.month() == current_month)
+            .filter(|h| h.holiday_date.month() == stat_month)
             .count() as i64;
 
         let next_upcoming_holiday = holidays.iter().find(|h| h.holiday_date > now).map(|h| {
@@ -95,6 +108,7 @@ impl CalendarService {
 
         let items = holidays
             .into_iter()
+            .filter(|h| target_month.map_or(true, |m| h.holiday_date.month() == m))
             .map(|h| HolidayResponse {
                 id: h.id,
                 holiday_description: h.holiday_description,

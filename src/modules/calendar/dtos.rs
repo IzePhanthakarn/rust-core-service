@@ -61,6 +61,8 @@ pub struct FetchHolidayResult {
 pub struct HolidayFilterQuery {
     #[param(example = "2026")]
     pub year: Option<String>,
+    #[param(example = "6")]
+    pub month: Option<String>,
 }
 
 #[derive(Serialize, ToSchema)]

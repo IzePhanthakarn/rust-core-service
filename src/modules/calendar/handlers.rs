@@ -30,7 +30,7 @@ pub async fn get_holidays(
     Query(filters): Query<HolidayFilterQuery>,
 ) -> Result<Json<ApiResponse<HolidayListResponse>>, AppError> {
     let mut conn = state.get_conn()?;
-    let data = CalendarService::get_holidays(&mut conn, filters.year)?;
+    let data = CalendarService::get_holidays(&mut conn, filters.year, filters.month)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลวันหยุดสำเร็จ", data)))
 }
