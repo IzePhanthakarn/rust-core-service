@@ -50,7 +50,18 @@ use utoipa::{Modify, OpenApi};
         modules::calendar::handlers::get_events,
         modules::calendar::handlers::create_events,
         modules::calendar::handlers::update_event,
-        modules::calendar::handlers::delete_event
+        modules::calendar::handlers::delete_event,
+
+        // Todo Routes
+        modules::todos::handlers::get_all_todo_lists,
+        modules::todos::handlers::create_todo_list,
+        modules::todos::handlers::update_todo_list,
+        modules::todos::handlers::delete_todo_list,
+        modules::todos::handlers::move_todo_list_to_top,
+        modules::todos::handlers::create_todo_item,
+        modules::todos::handlers::reorder_todo_items,
+        modules::todos::handlers::toggle_todo_item,
+        modules::todos::handlers::delete_todo_item
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -137,6 +148,20 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<modules::calendar::dtos::EventListResponse>,
         core::response::ApiResponse<modules::calendar::dtos::EventResponse>,
         // ================================
+
+        // ==== Todos ====
+        modules::todos::models::TodoList,
+        modules::todos::models::TodoItem,
+        modules::todos::dtos::CreateTodoListRequest,
+        modules::todos::dtos::UpdateTodoListRequest,
+        modules::todos::dtos::CreateTodoItemRequest,
+        modules::todos::dtos::ReorderTodoItemsRequest,
+        modules::todos::dtos::TodoListResponse,
+        modules::todos::dtos::TodoItemResponse,
+        core::response::ApiResponse<Vec<modules::todos::dtos::TodoListResponse>>,
+        core::response::ApiResponse<modules::todos::dtos::TodoListResponse>,
+        core::response::ApiResponse<modules::todos::dtos::TodoItemResponse>,
+        // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
@@ -144,7 +169,8 @@ use utoipa::{Modify, OpenApi};
         (name = "Users", description = "User Management"),
         (name = "Properties", description = "Property Type and Option Management"),
         (name = "Work Logs", description = "Work Log Management"),
-        (name = "Calendar", description = "Calendar & Holiday Management")
+        (name = "Calendar", description = "Calendar & Holiday Management"),
+        (name = "Todos", description = "Todo List and Item Management")
     ),
     servers(
         (url = "/v1", description = "Core API v1")

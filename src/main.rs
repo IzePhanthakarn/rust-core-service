@@ -64,7 +64,8 @@ async fn main() {
             modules::properties::routes::property_routes(),
         )
         .nest("/work-logs", modules::work_logs::routes::work_logs_routes())
-        .nest("/calendar", modules::calendar::routes::calendar_routes());
+        .nest("/calendar", modules::calendar::routes::calendar_routes())
+        .nest("/todos", modules::todos::routes::todos_routes());
 
     let app = Router::new()
         .nest(API_PREFIX, api_routes)

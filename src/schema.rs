@@ -101,6 +101,42 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
 
+    todo_items (id) {
+        id -> Uuid,
+        list_id -> Uuid,
+        #[max_length = 100]
+        title -> Varchar,
+        #[max_length = 3000]
+        description -> Nullable<Varchar>,
+        is_completed -> Bool,
+        due_date -> Nullable<Timestamptz>,
+        position -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
+    todo_lists (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        #[max_length = 100]
+        title -> Varchar,
+        #[max_length = 3000]
+        description -> Nullable<Varchar>,
+        #[max_length = 20]
+        color -> Nullable<Varchar>,
+        position -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     user_profiles (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -169,6 +205,8 @@ diesel::joinable!(events -> users (user_id));
 diesel::joinable!(property_options -> property_types (property_type_id));
 diesel::joinable!(property_options -> users (created_by));
 diesel::joinable!(social_accounts -> users (user_id));
+diesel::joinable!(todo_items -> todo_lists (list_id));
+diesel::joinable!(todo_lists -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
 diesel::joinable!(work_log_tags -> work_logs (log_id));
 diesel::joinable!(work_logs -> users (user_id));
@@ -179,6 +217,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     property_options,
     property_types,
     social_accounts,
+    todo_items,
+    todo_lists,
     user_profiles,
     users,
     work_log_tags,
