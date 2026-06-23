@@ -515,6 +515,7 @@ impl ProjectService {
         user_id: Uuid,
     ) -> Result<SprintResponse, AppError> {
         Self::ensure_member(conn, project_id, user_id)?;
+        let has_active_sprint = ProjectRepository::find_active_sprint(conn, project_id)?.is_some();
 
         let new_sprint = NewSprint {
             project_id,
@@ -522,7 +523,7 @@ impl ProjectService {
             goal: normalize_optional(payload.goal.as_deref()),
             start_date: payload.start_date,
             end_date: payload.end_date,
-            is_active: true,
+            is_active: !has_active_sprint,
         };
 
         let sprint = ProjectRepository::insert_sprint(conn, &new_sprint)?;
@@ -544,6 +545,15 @@ impl ProjectService {
             return Err(AppError::NotFound("ไม่พบสปรินต์นี้ในโปรเจกต์".to_string()));
         }
 
+        if payload.is_active == Some(true)
+            && let Some(active_sprint) = ProjectRepository::find_active_sprint(conn, project_id)?
+            && active_sprint.id != sprint_id
+        {
+            return Err(AppError::BadRequest(
+                "ไม่สามารถเปิดสปรินต์ได้ เพราะมีสปรินต์อื่นกำลังทำงานอยู่".to_string(),
+            ));
+        }
+
         let changeset = SprintChangeset {
             name: payload.name.as_ref().map(|name| name.trim().to_string()),
             goal: payload
@@ -557,6 +567,24 @@ impl ProjectService {
 
         let updated = ProjectRepository::update_sprint(conn, sprint_id, &changeset)?;
         Ok(to_sprint_response(updated))
+    }
+
+    pub fn delete_sprint(
+        conn: &mut PgConnection,
+        project_id: Uuid,
+        sprint_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<(), AppError> {
+        Self::ensure_owner(conn, project_id, user_id)?;
+
+        let sprint = ProjectRepository::find_sprint(conn, sprint_id)
+            .map_err(|_| AppError::NotFound("ไม่พบสปรินต์นี้".to_string()))?;
+        if sprint.project_id != project_id {
+            return Err(AppError::NotFound("ไม่พบสปรินต์นี้ในโปรเจกต์".to_string()));
+        }
+
+        ProjectRepository::delete_sprint(conn, sprint_id)?;
+        Ok(())
     }
 
     // ===== Tasks =====

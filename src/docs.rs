@@ -83,6 +83,7 @@ use utoipa::{Modify, OpenApi};
         modules::projects::handlers::get_sprint_tasks,
         modules::projects::handlers::create_sprint,
         modules::projects::handlers::update_sprint,
+        modules::projects::handlers::delete_sprint,
 
         // Task Routes
         modules::projects::handlers::create_task,
@@ -215,6 +216,7 @@ use utoipa::{Modify, OpenApi};
         modules::projects::dtos::MemberResponse,
         modules::projects::dtos::NoteResponse,
         modules::projects::dtos::SprintResponse,
+        modules::projects::dtos::TaskAssigneeResponse,
         modules::projects::dtos::TaskResponse,
         modules::projects::dtos::KanbanResponse,
         modules::projects::dtos::KanbanColumnResponse,

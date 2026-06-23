@@ -44,7 +44,10 @@ pub fn project_routes() -> Router<AppState> {
             "/{id}/sprints/{sprint_id}/tasks",
             get(handlers::get_sprint_tasks),
         )
-        .route("/{id}/sprints/{sprint_id}", put(handlers::update_sprint))
+        .route(
+            "/{id}/sprints/{sprint_id}",
+            put(handlers::update_sprint).delete(handlers::delete_sprint),
+        )
         .route_layer(middleware::from_fn(auth_guard))
 }
 

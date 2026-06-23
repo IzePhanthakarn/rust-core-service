@@ -464,6 +464,26 @@ pub async fn update_sprint(
     Ok(Json(ApiResponse::success(200, "แก้ไขสปรินต์สำเร็จ", result)))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/projects/{id}/sprints/{sprint_id}",
+    tag = "Projects",
+    security(("bearerAuth" = [])),
+    responses(
+        (status = 200, description = "Sprint deleted successfully")
+    )
+)]
+pub async fn delete_sprint(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path((id, sprint_id)): Path<(Uuid, Uuid)>,
+) -> Result<Json<ApiResponse<()>>, AppError> {
+    let mut conn = state.get_conn()?;
+    ProjectService::delete_sprint(&mut conn, id, sprint_id, claims.sub)?;
+
+    Ok(Json(ApiResponse::success_without_data(200, "ลบสปรินต์สำเร็จ")))
+}
+
 // ===== Tasks =====
 
 #[utoipa::path(

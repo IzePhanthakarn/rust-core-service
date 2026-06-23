@@ -350,6 +350,10 @@ impl ProjectRepository {
             .get_result(conn)
     }
 
+    pub fn delete_sprint(conn: &mut PgConnection, sprint_id: Uuid) -> QueryResult<usize> {
+        diesel::delete(sprints::table.filter(sprints::id.eq(sprint_id))).execute(conn)
+    }
+
     // ===== Notes =====
 
     pub fn find_notes_by_project(
