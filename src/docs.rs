@@ -61,7 +61,35 @@ use utoipa::{Modify, OpenApi};
         modules::todos::handlers::create_todo_item,
         modules::todos::handlers::reorder_todo_items,
         modules::todos::handlers::toggle_todo_item,
-        modules::todos::handlers::delete_todo_item
+        modules::todos::handlers::delete_todo_item,
+
+        // Project Routes
+        modules::projects::handlers::list_projects,
+        modules::projects::handlers::create_project,
+        modules::projects::handlers::get_project_detail,
+        modules::projects::handlers::update_project,
+        modules::projects::handlers::delete_project,
+        modules::projects::handlers::list_members,
+        modules::projects::handlers::add_member,
+        modules::projects::handlers::remove_member,
+        modules::projects::handlers::get_notes,
+        modules::projects::handlers::create_note,
+        modules::projects::handlers::update_note,
+        modules::projects::handlers::delete_note,
+        modules::projects::handlers::get_boards,
+        modules::projects::handlers::get_kanban,
+        modules::projects::handlers::get_backlogs,
+        modules::projects::handlers::list_sprints,
+        modules::projects::handlers::get_sprint_tasks,
+        modules::projects::handlers::create_sprint,
+        modules::projects::handlers::update_sprint,
+
+        // Task Routes
+        modules::projects::handlers::create_task,
+        modules::projects::handlers::update_task,
+        modules::projects::handlers::delete_task,
+        modules::projects::handlers::list_comments,
+        modules::projects::handlers::create_comment
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -162,6 +190,52 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<modules::todos::dtos::TodoListResponse>,
         core::response::ApiResponse<modules::todos::dtos::TodoItemResponse>,
         // ================================
+
+        // ==== Projects ====
+        modules::projects::models::ProjectStatus,
+        modules::projects::models::NoteType,
+        modules::projects::models::TaskType,
+        modules::projects::models::TaskPriority,
+
+        modules::projects::dtos::CreateProjectRequest,
+        modules::projects::dtos::UpdateProjectRequest,
+        modules::projects::dtos::AddProjectMemberRequest,
+        modules::projects::dtos::CreateNoteRequest,
+        modules::projects::dtos::UpdateNoteRequest,
+        modules::projects::dtos::CreateSprintRequest,
+        modules::projects::dtos::UpdateSprintRequest,
+        modules::projects::dtos::CreateTaskRequest,
+        modules::projects::dtos::UpdateTaskRequest,
+        modules::projects::dtos::CreateCommentRequest,
+
+        modules::projects::dtos::ProjectResponse,
+        modules::projects::dtos::ProjectDetailResponse,
+        modules::projects::dtos::BoardResponse,
+        modules::projects::dtos::BoardColumnResponse,
+        modules::projects::dtos::MemberResponse,
+        modules::projects::dtos::NoteResponse,
+        modules::projects::dtos::SprintResponse,
+        modules::projects::dtos::TaskResponse,
+        modules::projects::dtos::KanbanResponse,
+        modules::projects::dtos::KanbanColumnResponse,
+        modules::projects::dtos::CommentResponse,
+
+        core::response::ApiResponse<Vec<modules::projects::dtos::ProjectResponse>>,
+        core::response::ApiResponse<modules::projects::dtos::ProjectDetailResponse>,
+        core::response::ApiResponse<modules::projects::dtos::MemberResponse>,
+        core::response::PaginatedData<modules::projects::dtos::MemberResponse>,
+        core::response::ApiResponse<core::response::PaginatedData<modules::projects::dtos::MemberResponse>>,
+        core::response::ApiResponse<Vec<modules::projects::dtos::NoteResponse>>,
+        core::response::ApiResponse<modules::projects::dtos::NoteResponse>,
+        core::response::ApiResponse<Vec<modules::projects::dtos::BoardResponse>>,
+        core::response::ApiResponse<modules::projects::dtos::KanbanResponse>,
+        core::response::ApiResponse<Vec<modules::projects::dtos::TaskResponse>>,
+        core::response::ApiResponse<modules::projects::dtos::TaskResponse>,
+        core::response::ApiResponse<Vec<modules::projects::dtos::SprintResponse>>,
+        core::response::ApiResponse<modules::projects::dtos::SprintResponse>,
+        core::response::ApiResponse<Vec<modules::projects::dtos::CommentResponse>>,
+        core::response::ApiResponse<modules::projects::dtos::CommentResponse>,
+        // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
@@ -170,7 +244,9 @@ use utoipa::{Modify, OpenApi};
         (name = "Properties", description = "Property Type and Option Management"),
         (name = "Work Logs", description = "Work Log Management"),
         (name = "Calendar", description = "Calendar & Holiday Management"),
-        (name = "Todos", description = "Todo List and Item Management")
+        (name = "Todos", description = "Todo List and Item Management"),
+        (name = "Projects", description = "Project, Notes, Kanban, Sprint & Member Management"),
+        (name = "Tasks", description = "Task (Kanban Card / Backlog) and Comment Management")
     ),
     servers(
         (url = "/v1", description = "Core API v1")

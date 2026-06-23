@@ -24,9 +24,9 @@ pub struct AppState {
 
 impl AppState {
     pub fn get_conn(&self) -> Result<config::database::DbConn, core::errors::AppError> {
-        self.db_pool
-            .get()
-            .map_err(|_| core::errors::AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string()))
+        self.db_pool.get().map_err(|_| {
+            core::errors::AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string())
+        })
     }
 }
 
@@ -65,7 +65,9 @@ async fn main() {
         )
         .nest("/work-logs", modules::work_logs::routes::work_logs_routes())
         .nest("/calendar", modules::calendar::routes::calendar_routes())
-        .nest("/todos", modules::todos::routes::todos_routes());
+        .nest("/todos", modules::todos::routes::todos_routes())
+        .nest("/projects", modules::projects::routes::project_routes())
+        .nest("/tasks", modules::projects::routes::task_routes());
 
     let app = Router::new()
         .nest(API_PREFIX, api_routes)

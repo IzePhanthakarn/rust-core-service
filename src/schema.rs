@@ -2,6 +2,22 @@
 
 pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "note_type"))]
+    pub struct NoteType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "project_status"))]
+    pub struct ProjectStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "task_priority"))]
+    pub struct TaskPriority;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "task_type"))]
+    pub struct TaskType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "user_provider"))]
     pub struct UserProvider;
 
@@ -12,6 +28,29 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "user_status"))]
     pub struct UserStatus;
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
+    board_columns (id) {
+        id -> Uuid,
+        board_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+        order_index -> Int4,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
+    boards (id) {
+        id -> Uuid,
+        project_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+    }
 }
 
 diesel::table! {
@@ -43,6 +82,55 @@ diesel::table! {
         holiday_date -> Timestamptz,
         #[max_length = 10]
         holiday_year -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
+    project_members (id) {
+        id -> Uuid,
+        project_id -> Uuid,
+        user_id -> Uuid,
+        joined_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+    use super::sql_types::NoteType;
+
+    project_notes (id) {
+        id -> Uuid,
+        project_id -> Uuid,
+        parent_id -> Nullable<Uuid>,
+        #[sql_name = "type"]
+        type_ -> NoteType,
+        #[max_length = 255]
+        title -> Varchar,
+        content -> Nullable<Text>,
+        created_by -> Uuid,
+        updated_by -> Uuid,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+    use super::sql_types::ProjectStatus;
+
+    projects (id) {
+        id -> Uuid,
+        #[max_length = 255]
+        title -> Varchar,
+        description -> Text,
+        owner_id -> Uuid,
+        status -> ProjectStatus,
+        start_date -> Timestamptz,
+        finish_date -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
@@ -95,6 +183,61 @@ diesel::table! {
         #[max_length = 255]
         provider_id -> Varchar,
         created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
+    sprints (id) {
+        id -> Uuid,
+        project_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+        goal -> Nullable<Text>,
+        start_date -> Timestamptz,
+        end_date -> Nullable<Timestamptz>,
+        is_active -> Bool,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
+    task_comments (id) {
+        id -> Uuid,
+        task_id -> Uuid,
+        user_id -> Uuid,
+        content -> Text,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+    use super::sql_types::TaskType;
+    use super::sql_types::TaskPriority;
+
+    tasks (id) {
+        id -> Uuid,
+        project_id -> Uuid,
+        board_id -> Uuid,
+        sprint_id -> Nullable<Uuid>,
+        column_id -> Uuid,
+        #[max_length = 255]
+        title -> Varchar,
+        description -> Text,
+        #[sql_name = "type"]
+        type_ -> TaskType,
+        priority -> TaskPriority,
+        story_points -> Nullable<Int4>,
+        assignee_id -> Nullable<Uuid>,
+        reporter_id -> Uuid,
+        #[max_length = 20]
+        tag -> Nullable<Varchar>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -201,10 +344,23 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(board_columns -> boards (board_id));
+diesel::joinable!(boards -> projects (project_id));
 diesel::joinable!(events -> users (user_id));
+diesel::joinable!(project_members -> projects (project_id));
+diesel::joinable!(project_members -> users (user_id));
+diesel::joinable!(project_notes -> projects (project_id));
+diesel::joinable!(projects -> users (owner_id));
 diesel::joinable!(property_options -> property_types (property_type_id));
 diesel::joinable!(property_options -> users (created_by));
 diesel::joinable!(social_accounts -> users (user_id));
+diesel::joinable!(sprints -> projects (project_id));
+diesel::joinable!(task_comments -> tasks (task_id));
+diesel::joinable!(task_comments -> users (user_id));
+diesel::joinable!(tasks -> board_columns (column_id));
+diesel::joinable!(tasks -> boards (board_id));
+diesel::joinable!(tasks -> projects (project_id));
+diesel::joinable!(tasks -> sprints (sprint_id));
 diesel::joinable!(todo_items -> todo_lists (list_id));
 diesel::joinable!(todo_lists -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
@@ -212,11 +368,19 @@ diesel::joinable!(work_log_tags -> work_logs (log_id));
 diesel::joinable!(work_logs -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    board_columns,
+    boards,
     events,
     holidays,
+    project_members,
+    project_notes,
+    projects,
     property_options,
     property_types,
     social_accounts,
+    sprints,
+    task_comments,
+    tasks,
     todo_items,
     todo_lists,
     user_profiles,
