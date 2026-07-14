@@ -48,7 +48,7 @@ INSERT INTO property_options (property_type_id, sort_order, label, value, is_act
 
 -- Insert Productivity Score Property Types
 INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES 
-('155deadd-e1b4-4296-bf5c-0b4e27728438','Productivity Score', 'PRODUCTIVITY_SCORE', 'score for productivity', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+('155deadd-e1b4-4296-bf5c-0b4e27728438','Productivity Score', 'PRODUCTIVITY_SCORE', 'Score for productivity', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
 
 -- Insert Productivity Score Property Options
 INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES 
@@ -65,7 +65,7 @@ INSERT INTO property_options (property_type_id, sort_order, label, value, is_act
 
 -- Insert Mood Score Property Types
 INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES 
-('c89b46ba-f696-4822-9593-7da3e7cc94e0','Mood Score', 'MOOD_SCORE', 'score for mood', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+('c89b46ba-f696-4822-9593-7da3e7cc94e0','Mood Score', 'MOOD_SCORE', 'Score for mood', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
 
 -- Insert Mood Score Property Options
 INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES 
@@ -122,3 +122,68 @@ INSERT INTO property_options (property_type_id, sort_order, label, value, is_act
 ('adfddf5f-1639-4477-9330-1bf8e569ad7a', 6, 'Deep Work', 'terracotta', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
 ('adfddf5f-1639-4477-9330-1bf8e569ad7a', 7, 'Server Maintenance', 'amber', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
 ('adfddf5f-1639-4477-9330-1bf8e569ad7a', 8, 'Public Holidays', 'coral', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Transaction Type Property Types
+INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES
+('2f0d7ee2-6d0e-4c47-9d02-2fbec3b7c1a3','Transaction Type', 'TRANSACTION_TYPE', 'Property type for transaction type', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Transaction Type Property Options
+INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES
+('2f0d7ee2-6d0e-4c47-9d02-2fbec3b7c1a3', 1, '💰 Income', 'income', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('2f0d7ee2-6d0e-4c47-9d02-2fbec3b7c1a3', 2, '💸 Expense', 'expense', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Transaction Expense Category Property Types
+INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f','Transaction Expense Category', 'TRANSACTION_EXPENSE_CATEGORY', 'Category options for expense transactions', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Transaction Expense Category Property Options
+INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 1, '🍜 Food & Drinks', 'food', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 2, '🚗 Transport', 'transport', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 3, '🏠 Housing', 'housing', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 4, '🧾 Bills & Utilities', 'bills', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 5, '🛒 Shopping', 'shopping', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 6, '🎬 Entertainment', 'entertainment', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 7, '🔁 Subscriptions', 'subscription', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 8, '🏥 Health', 'health', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 9, '📚 Education', 'education', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 10, '✈️ Travel', 'travel', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 11, '🛡️ Insurance & Tax', 'insurance_tax', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 12, '💳 Debt & Loan', 'debt', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 13, '🐶 Pet', 'pet', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 14, '🎁 Gift & Donation', 'gift_donation', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 15, '📈 Saving & Investment', 'saving_investment', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('4c1a4b8e-7c6a-4b1e-9f4d-1a2b3c4d5e6f', 16, '📦 Other', 'other_expense', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Transaction Income Category Property Types
+INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d','Transaction Income Category', 'TRANSACTION_INCOME_CATEGORY', 'Category options for income transactions', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Transaction Income Category Property Options
+INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 1, '💼 Salary', 'salary', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 2, '🎉 Bonus', 'bonus', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 3, '💻 Freelance', 'freelance', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 4, '📈 Investment Return', 'investment_return', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 5, '🏪 Sale', 'sale', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 6, '🎁 Gift Received', 'gift_received', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 7, '↩️ Refund', 'refund', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('9b3f5d21-8e4c-4a77-b0d5-6e7f8a9b0c1d', 8, '📦 Other', 'other_income', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Billing Cycle Property Types
+INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES
+('d5e6f7a8-9b0c-4d1e-8f2a-3b4c5d6e7f80','Billing Cycle', 'BILLING_CYCLE', 'Billing cycle options for subscriptions', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Billing Cycle Property Options
+INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES
+('d5e6f7a8-9b0c-4d1e-8f2a-3b4c5d6e7f80', 1, 'Monthly', 'monthly', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('d5e6f7a8-9b0c-4d1e-8f2a-3b4c5d6e7f80', 2, 'Yearly', 'yearly', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Status Property Types
+INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES
+('e1f2a3b4-c5d6-4e7f-9a0b-1c2d3e4f5a6b','Status', 'STATUS', 'Generic active / inactive status options', 'c8adb331-dcf6-47ad-ad15-066a145127b3', 'c8adb331-dcf6-47ad-ad15-066a145127b3');
+
+-- Insert Status Property Options
+INSERT INTO property_options (property_type_id, sort_order, label, value, is_active, created_by) VALUES
+('e1f2a3b4-c5d6-4e7f-9a0b-1c2d3e4f5a6b', 1, 'Active', 'active', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
+('e1f2a3b4-c5d6-4e7f-9a0b-1c2d3e4f5a6b', 2, 'Inactive', 'inactive', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');

@@ -67,7 +67,15 @@ async fn main() {
         .nest("/calendar", modules::calendar::routes::calendar_routes())
         .nest("/todos", modules::todos::routes::todos_routes())
         .nest("/projects", modules::projects::routes::project_routes())
-        .nest("/tasks", modules::projects::routes::task_routes());
+        .nest("/tasks", modules::projects::routes::task_routes())
+        .nest(
+            "/transactions",
+            modules::transactions::routes::transaction_routes(),
+        )
+        .nest(
+            "/subscriptions",
+            modules::transactions::routes::subscription_routes(),
+        );
 
     let app = Router::new()
         .nest(API_PREFIX, api_routes)

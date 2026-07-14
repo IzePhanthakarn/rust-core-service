@@ -90,7 +90,22 @@ use utoipa::{Modify, OpenApi};
         modules::projects::handlers::update_task,
         modules::projects::handlers::delete_task,
         modules::projects::handlers::list_comments,
-        modules::projects::handlers::create_comment
+        modules::projects::handlers::create_comment,
+
+        // Transaction Routes
+        modules::transactions::handlers::get_all_transactions,
+        modules::transactions::handlers::get_one_transaction,
+        modules::transactions::handlers::create_transaction,
+        modules::transactions::handlers::update_transaction,
+        modules::transactions::handlers::delete_transaction,
+
+        // Subscription Routes
+        modules::transactions::handlers::get_all_subscriptions,
+        modules::transactions::handlers::get_subscription_summary,
+        modules::transactions::handlers::create_subscription,
+        modules::transactions::handlers::update_subscription,
+        modules::transactions::handlers::toggle_subscription,
+        modules::transactions::handlers::delete_subscription
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -238,6 +253,26 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<Vec<modules::projects::dtos::CommentResponse>>,
         core::response::ApiResponse<modules::projects::dtos::CommentResponse>,
         // ================================
+
+        // ==== Transactions & Subscriptions ====
+        modules::transactions::models::TransactionType,
+        modules::transactions::models::BillingCycle,
+
+        modules::transactions::dtos::CreateTransactionRequest,
+        modules::transactions::dtos::UpdateTransactionRequest,
+        modules::transactions::dtos::TransactionResponse,
+        modules::transactions::dtos::CreateSubscriptionRequest,
+        modules::transactions::dtos::UpdateSubscriptionRequest,
+        modules::transactions::dtos::SubscriptionResponse,
+        modules::transactions::dtos::SubscriptionSummaryResponse,
+
+        core::response::PaginatedData<modules::transactions::dtos::TransactionResponse>,
+        core::response::ApiResponse<core::response::PaginatedData<modules::transactions::dtos::TransactionResponse>>,
+        core::response::ApiResponse<modules::transactions::dtos::TransactionResponse>,
+        core::response::ApiResponse<Vec<modules::transactions::dtos::SubscriptionResponse>>,
+        core::response::ApiResponse<modules::transactions::dtos::SubscriptionResponse>,
+        core::response::ApiResponse<modules::transactions::dtos::SubscriptionSummaryResponse>,
+        // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
@@ -248,7 +283,9 @@ use utoipa::{Modify, OpenApi};
         (name = "Calendar", description = "Calendar & Holiday Management"),
         (name = "Todos", description = "Todo List and Item Management"),
         (name = "Projects", description = "Project, Notes, Kanban, Sprint & Member Management"),
-        (name = "Tasks", description = "Task (Kanban Card / Backlog) and Comment Management")
+        (name = "Tasks", description = "Task (Kanban Card / Backlog) and Comment Management"),
+        (name = "Transactions", description = "Income & Expense Transaction Management"),
+        (name = "Subscriptions", description = "Recurring Monthly/Yearly Expense Management")
     ),
     servers(
         (url = "/v1", description = "Core API v1")
