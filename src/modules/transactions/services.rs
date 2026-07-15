@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use chrono::{Datelike, Duration, NaiveDate, Utc};
 use diesel::PgConnection;
 use uuid::Uuid;
 
@@ -8,14 +11,19 @@ use crate::{
     },
     modules::transactions::{
         dtos::{
-            CreateSubscriptionRequest, CreateTransactionRequest, SubscriptionFilterQuery,
-            SubscriptionResponse, SubscriptionSummaryResponse, TransactionFilterQuery,
-            TransactionResponse, UpdateSubscriptionRequest, UpdateTransactionRequest,
+            CreateSubscriptionRequest, CreateTransactionRequest, SubscriptionCategoryStat,
+            SubscriptionCycleSplit, SubscriptionFilterQuery, SubscriptionListResponse,
+            SubscriptionMonthlyStat, SubscriptionResponse, SubscriptionStatsResponse,
+            SubscriptionTopExpense, TransactionFilterQuery, TransactionResponse,
+            UpdateSubscriptionRequest, UpdateTransactionRequest,
         },
         models::{BillingCycle, NewSubscription, NewTransaction, Subscription, Transaction},
         repositories::TransactionRepository,
     },
 };
+
+/// จำนวนรายการค่าใช้จ่ายสูงสุดที่ส่งกลับ
+const TOP_EXPENSES_LIMIT: usize = 4;
 
 pub struct TransactionService;
 
@@ -112,31 +120,119 @@ impl TransactionService {
         conn: &mut PgConnection,
         user_id: Uuid,
         filters: SubscriptionFilterQuery,
-    ) -> Result<Vec<SubscriptionResponse>, AppError> {
+    ) -> Result<SubscriptionListResponse, AppError> {
         let subscriptions = TransactionRepository::find_all_subscriptions(conn, user_id, &filters)
             .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
-        Ok(subscriptions
-            .into_iter()
-            .map(TransactionRepository::to_subscription_response)
-            .collect())
-    }
-
-    pub fn get_subscription_summary(
-        conn: &mut PgConnection,
-        user_id: Uuid,
-    ) -> Result<SubscriptionSummaryResponse, AppError> {
-        let (monthly_total, yearly_total, active_count) =
-            TransactionRepository::sum_active_subscriptions(conn, user_id)
+        let active_subscriptions =
+            TransactionRepository::find_active_subscriptions(conn, user_id)
                 .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
-        Ok(SubscriptionSummaryResponse {
-            monthly_total,
-            yearly_total,
-            estimated_monthly_total: monthly_total + yearly_total / 12,
-            estimated_yearly_total: monthly_total * 12 + yearly_total,
-            active_count,
-        })
+        let total_count = TransactionRepository::count_subscriptions(conn, user_id)
+            .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
+
+        let items = subscriptions
+            .into_iter()
+            .map(TransactionRepository::to_subscription_response)
+            .collect();
+
+        let stats = Self::build_subscription_stats(&active_subscriptions, total_count);
+
+        Ok(SubscriptionListResponse { items, stats })
+    }
+
+    /// คำนวณสถิติจากรายการ active ทั้งหมด (global ไม่ผูกกับ filter) หน่วยเป็นสตางค์
+    fn build_subscription_stats(
+        active_subscriptions: &[Subscription],
+        total_count: i64,
+    ) -> SubscriptionStatsResponse {
+        let today = Utc::now().date_naive();
+
+        let mut monthly_recurring: i64 = 0;
+        let mut yearly_estimate: i64 = 0;
+        let mut remaining_count: i64 = 0;
+        let mut remaining_amount: i64 = 0;
+        let mut passed_count: i64 = 0;
+        let mut passed_amount: i64 = 0;
+        let mut monthly_count: i64 = 0;
+        let mut yearly_count: i64 = 0;
+        // category -> (ยอดรายเดือน normalize, จำนวนรายการ)
+        let mut category_map: HashMap<Option<String>, (i64, i64)> = HashMap::new();
+
+        for subscription in active_subscriptions {
+            let monthly_amount = normalize_monthly(subscription);
+            monthly_recurring += monthly_amount;
+
+            match subscription.billing_cycle {
+                BillingCycle::Monthly => {
+                    yearly_estimate += subscription.amount * 12;
+                    monthly_count += 1;
+                }
+                BillingCycle::Yearly => {
+                    yearly_estimate += subscription.amount;
+                    yearly_count += 1;
+                }
+            }
+
+            // เฉพาะรายการที่ครบกำหนดตัดเงินในเดือนนี้ (รายเดือนทุกตัว + รายปีที่ตรงเดือน)
+            // ถ้าวันตัดผ่านไปแล้ว = จ่ายแล้ว, ยังไม่ถึง = ยังเหลือ
+            if let Some(billing_date) = current_month_billing_date(subscription, today) {
+                if billing_date < today {
+                    passed_count += 1;
+                    passed_amount += subscription.amount;
+                } else {
+                    remaining_count += 1;
+                    remaining_amount += subscription.amount;
+                }
+            }
+
+            let entry = category_map
+                .entry(subscription.category.clone())
+                .or_insert((0, 0));
+            entry.0 += monthly_amount;
+            entry.1 += 1;
+        }
+
+        let mut category_breakdown: Vec<SubscriptionCategoryStat> = category_map
+            .into_iter()
+            .map(|(category, (monthly_amount, count))| SubscriptionCategoryStat {
+                category,
+                monthly_amount,
+                count,
+            })
+            .collect();
+        category_breakdown.sort_by_key(|stat| std::cmp::Reverse(stat.monthly_amount));
+
+        let mut top_expenses: Vec<SubscriptionTopExpense> = active_subscriptions
+            .iter()
+            .map(|subscription| SubscriptionTopExpense {
+                name: subscription.name.clone(),
+                monthly_amount: normalize_monthly(subscription),
+            })
+            .collect();
+        top_expenses.sort_by_key(|expense| std::cmp::Reverse(expense.monthly_amount));
+        top_expenses.truncate(TOP_EXPENSES_LIMIT);
+
+        SubscriptionStatsResponse {
+            monthly_recurring,
+            yearly_estimate,
+            active_count: active_subscriptions.len() as i64,
+            total_count,
+            remaining_this_month: SubscriptionMonthlyStat {
+                count: remaining_count,
+                amount: remaining_amount,
+            },
+            passed_this_month: SubscriptionMonthlyStat {
+                count: passed_count,
+                amount: passed_amount,
+            },
+            category_breakdown,
+            cycle_split: SubscriptionCycleSplit {
+                monthly_count,
+                yearly_count,
+            },
+            top_expenses,
+        }
     }
 
     pub fn create_subscription(
@@ -281,4 +377,58 @@ impl TransactionService {
 
 fn normalize_optional(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|text| !text.is_empty())
+}
+
+/// แปลงยอดของ subscription ให้เป็นค่าใช้จ่ายต่อเดือน (รายปีหาร 12)
+fn normalize_monthly(subscription: &Subscription) -> i64 {
+    match subscription.billing_cycle {
+        BillingCycle::Monthly => subscription.amount,
+        BillingCycle::Yearly => subscription.amount / 12,
+    }
+}
+
+/// จำนวนวันสูงสุดของเดือน ใช้ clamp billing_day ที่เกิน (เช่น 31 ในเดือน ก.พ.)
+fn last_day_of_month(year: i32, month: u32) -> u32 {
+    let (next_year, next_month) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
+
+    let first_of_next_month = NaiveDate::from_ymd_opt(next_year, next_month, 1)
+        .expect("month is within 1..=12");
+
+    (first_of_next_month - Duration::days(1)).day()
+}
+
+/// สร้างวันตัดเงินของเดือนที่กำหนด โดย clamp วันให้ไม่เกินวันสิ้นเดือน
+fn build_billing_date(year: i32, month: u32, billing_day: i32) -> NaiveDate {
+    let day = (billing_day.max(1) as u32).min(last_day_of_month(year, month));
+
+    NaiveDate::from_ymd_opt(year, month, day).expect("day is clamped within the month")
+}
+
+/// วันตัดเงินของเดือนปัจจุบัน — คืน None ถ้ารายการนี้ไม่ได้ครบกำหนดในเดือนนี้
+/// (รายเดือนครบทุกเดือน, รายปีครบเฉพาะเดือนที่ตรง billing_month)
+fn current_month_billing_date(subscription: &Subscription, today: NaiveDate) -> Option<NaiveDate> {
+    match subscription.billing_cycle {
+        BillingCycle::Monthly => Some(build_billing_date(
+            today.year(),
+            today.month(),
+            subscription.billing_day,
+        )),
+        BillingCycle::Yearly => {
+            let month = subscription.billing_month.unwrap_or(1) as u32;
+
+            if month == today.month() {
+                Some(build_billing_date(
+                    today.year(),
+                    today.month(),
+                    subscription.billing_day,
+                ))
+            } else {
+                None
+            }
+        }
+    }
 }

@@ -26,7 +26,6 @@ pub fn subscription_routes() -> Router<AppState> {
             "/",
             get(handlers::get_all_subscriptions).post(handlers::create_subscription),
         )
-        .route("/summary", get(handlers::get_subscription_summary))
         .route(
             "/{subscription_id}",
             put(handlers::update_subscription).delete(handlers::delete_subscription),

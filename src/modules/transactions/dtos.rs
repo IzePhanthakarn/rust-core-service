@@ -177,16 +177,62 @@ pub struct SubscriptionResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-/// สรุปภาระค่าใช้จ่ายประจำ (นับเฉพาะรายการที่ is_active = true) หน่วยเป็นสตางค์
+/// รายการ subscription พร้อมสถิติสรุป (stats คำนวณจากรายการที่ active ทั้งหมด ไม่ผูกกับ filter)
 #[derive(Serialize, ToSchema)]
-pub struct SubscriptionSummaryResponse {
-    /// ยอดรวมของรายการที่จ่ายรายเดือน
-    pub monthly_total: i64,
-    /// ยอดรวมของรายการที่จ่ายรายปี
-    pub yearly_total: i64,
-    /// ค่าใช้จ่ายเฉลี่ยต่อเดือน (รายเดือน + รายปีหาร 12)
-    pub estimated_monthly_total: i64,
-    /// ค่าใช้จ่ายรวมต่อปี (รายเดือนคูณ 12 + รายปี)
-    pub estimated_yearly_total: i64,
+pub struct SubscriptionListResponse {
+    pub items: Vec<SubscriptionResponse>,
+    pub stats: SubscriptionStatsResponse,
+}
+
+/// สรุปสถิติของ subscription (จำนวนเงินหน่วยสตางค์)
+#[derive(Serialize, ToSchema)]
+pub struct SubscriptionStatsResponse {
+    /// ค่าใช้จ่ายรวมต่อเดือน (รายเดือน + รายปีหาร 12) เฉพาะรายการ active
+    pub monthly_recurring: i64,
+    /// ประมาณการค่าใช้จ่ายรวมต่อปี (รายเดือนคูณ 12 + รายปี) เฉพาะรายการ active
+    pub yearly_estimate: i64,
+    /// จำนวนรายการที่ active
     pub active_count: i64,
+    /// จำนวนรายการทั้งหมด (รวม inactive)
+    pub total_count: i64,
+    /// รายการที่ครบกำหนดตัดเงินในเดือนนี้แต่ยังไม่ถึงวันตัด (ยังไม่จ่าย)
+    pub remaining_this_month: SubscriptionMonthlyStat,
+    /// รายการที่ถึงวันตัดเงินของเดือนนี้ไปแล้ว (จ่ายแล้ว)
+    pub passed_this_month: SubscriptionMonthlyStat,
+    /// ยอดรายเดือน (normalize) แยกตามหมวด เรียงมากไปน้อย เฉพาะรายการ active
+    pub category_breakdown: Vec<SubscriptionCategoryStat>,
+    /// สัดส่วนจำนวนรายการตามรอบบิล เฉพาะรายการ active
+    pub cycle_split: SubscriptionCycleSplit,
+    /// รายการที่แพงที่สุด 4 อันดับ (คิดเป็นรายเดือน) เฉพาะรายการ active
+    pub top_expenses: Vec<SubscriptionTopExpense>,
+}
+
+/// สรุปรายการที่ครบกำหนดตัดเงินในเดือนนี้ (ใช้ทั้งฝั่งจ่ายแล้วและยังไม่จ่าย)
+#[derive(Serialize, ToSchema)]
+pub struct SubscriptionMonthlyStat {
+    pub count: i64,
+    /// ยอดเงินจริง (ไม่ normalize)
+    pub amount: i64,
+}
+
+/// ยอดรายเดือน (normalize) ของแต่ละหมวด
+#[derive(Serialize, ToSchema)]
+pub struct SubscriptionCategoryStat {
+    pub category: Option<String>,
+    pub monthly_amount: i64,
+    pub count: i64,
+}
+
+/// จำนวนรายการแยกตามรอบบิล
+#[derive(Serialize, ToSchema)]
+pub struct SubscriptionCycleSplit {
+    pub monthly_count: i64,
+    pub yearly_count: i64,
+}
+
+/// รายการค่าใช้จ่ายสูงสุด (คิดเป็นรายเดือน)
+#[derive(Serialize, ToSchema)]
+pub struct SubscriptionTopExpense {
+    pub name: String,
+    pub monthly_amount: i64,
 }

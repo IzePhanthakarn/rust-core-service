@@ -16,7 +16,7 @@ use crate::{
     modules::transactions::{
         dtos::{
             CreateSubscriptionRequest, CreateTransactionRequest, SubscriptionFilterQuery,
-            SubscriptionResponse, SubscriptionSummaryResponse, TransactionFilterQuery,
+            SubscriptionListResponse, SubscriptionResponse, TransactionFilterQuery,
             TransactionResponse, UpdateSubscriptionRequest, UpdateTransactionRequest,
         },
         services::TransactionService,
@@ -146,7 +146,7 @@ pub async fn delete_transaction(
     params(SubscriptionFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "Subscriptions found successfully", body = ApiResponse<Vec<SubscriptionResponse>>),
+        (status = 200, description = "Subscriptions found successfully", body = ApiResponse<SubscriptionListResponse>),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -154,29 +154,9 @@ pub async fn get_all_subscriptions(
     State(state): State<AppState>,
     Query(filters): Query<SubscriptionFilterQuery>,
     Extension(claims): Extension<Claims>,
-) -> Result<Json<ApiResponse<Vec<SubscriptionResponse>>>, AppError> {
+) -> Result<Json<ApiResponse<SubscriptionListResponse>>, AppError> {
     let mut conn = state.get_conn()?;
     let data = TransactionService::get_all_subscriptions(&mut conn, claims.sub, filters)?;
-
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
-}
-
-#[utoipa::path(
-    get,
-    path = "/subscriptions/summary",
-    tag = "Subscriptions",
-    security(("bearerAuth" = [])),
-    responses(
-        (status = 200, description = "Subscription summary calculated successfully", body = ApiResponse<SubscriptionSummaryResponse>),
-        (status = 500, description = "Internal server error")
-    )
-)]
-pub async fn get_subscription_summary(
-    State(state): State<AppState>,
-    Extension(claims): Extension<Claims>,
-) -> Result<Json<ApiResponse<SubscriptionSummaryResponse>>, AppError> {
-    let mut conn = state.get_conn()?;
-    let data = TransactionService::get_subscription_summary(&mut conn, claims.sub)?;
 
     Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
 }

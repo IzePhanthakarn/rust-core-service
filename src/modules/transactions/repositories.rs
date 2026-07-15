@@ -1,7 +1,5 @@
 use chrono::{DateTime, TimeZone, Utc};
-use diesel::dsl::sql;
 use diesel::prelude::*;
-use diesel::sql_types::BigInt;
 use diesel::{PgConnection, QueryResult, SelectableHelper};
 use uuid::Uuid;
 
@@ -143,7 +141,6 @@ impl TransactionRepository {
 
         query
             .order_by((
-                subscriptions::billing_day.asc(),
                 subscriptions::created_at.desc(),
             ))
             .select(Subscription::as_select())
@@ -213,31 +210,24 @@ impl TransactionRepository {
             .execute(conn)
     }
 
-    /// รวมยอดของ subscription ที่ยัง active แยกตามรอบบิล -> (รายเดือน, รายปี, จำนวนรายการ)
-    pub fn sum_active_subscriptions(
+    /// รายการ subscription ที่ยัง active ทั้งหมด (ไม่ผูก filter) ใช้สำหรับคำนวณ stats
+    pub fn find_active_subscriptions(
         conn: &mut PgConnection,
         user_id: Uuid,
-    ) -> QueryResult<(i64, i64, i64)> {
-        let (monthly_total, yearly_total) = subscriptions::table
+    ) -> QueryResult<Vec<Subscription>> {
+        subscriptions::table
             .filter(subscriptions::user_id.eq(user_id))
             .filter(subscriptions::is_active.eq(true))
-            .select((
-                sql::<BigInt>(
-                    "COALESCE(SUM(amount) FILTER (WHERE billing_cycle = 'monthly'), 0)::BIGINT",
-                ),
-                sql::<BigInt>(
-                    "COALESCE(SUM(amount) FILTER (WHERE billing_cycle = 'yearly'), 0)::BIGINT",
-                ),
-            ))
-            .first::<(i64, i64)>(conn)?;
+            .select(Subscription::as_select())
+            .load::<Subscription>(conn)
+    }
 
-        let active_count: i64 = subscriptions::table
+    /// จำนวน subscription ทั้งหมดของผู้ใช้ (รวมรายการที่ inactive)
+    pub fn count_subscriptions(conn: &mut PgConnection, user_id: Uuid) -> QueryResult<i64> {
+        subscriptions::table
             .filter(subscriptions::user_id.eq(user_id))
-            .filter(subscriptions::is_active.eq(true))
             .count()
-            .get_result(conn)?;
-
-        Ok((monthly_total, yearly_total, active_count))
+            .get_result(conn)
     }
 
     pub fn to_transaction_response(transaction: Transaction) -> TransactionResponse {

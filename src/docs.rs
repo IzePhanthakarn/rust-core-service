@@ -101,7 +101,6 @@ use utoipa::{Modify, OpenApi};
 
         // Subscription Routes
         modules::transactions::handlers::get_all_subscriptions,
-        modules::transactions::handlers::get_subscription_summary,
         modules::transactions::handlers::create_subscription,
         modules::transactions::handlers::update_subscription,
         modules::transactions::handlers::toggle_subscription,
@@ -264,14 +263,18 @@ use utoipa::{Modify, OpenApi};
         modules::transactions::dtos::CreateSubscriptionRequest,
         modules::transactions::dtos::UpdateSubscriptionRequest,
         modules::transactions::dtos::SubscriptionResponse,
-        modules::transactions::dtos::SubscriptionSummaryResponse,
+        modules::transactions::dtos::SubscriptionListResponse,
+        modules::transactions::dtos::SubscriptionStatsResponse,
+        modules::transactions::dtos::SubscriptionMonthlyStat,
+        modules::transactions::dtos::SubscriptionCategoryStat,
+        modules::transactions::dtos::SubscriptionCycleSplit,
+        modules::transactions::dtos::SubscriptionTopExpense,
 
         core::response::PaginatedData<modules::transactions::dtos::TransactionResponse>,
         core::response::ApiResponse<core::response::PaginatedData<modules::transactions::dtos::TransactionResponse>>,
         core::response::ApiResponse<modules::transactions::dtos::TransactionResponse>,
-        core::response::ApiResponse<Vec<modules::transactions::dtos::SubscriptionResponse>>,
+        core::response::ApiResponse<modules::transactions::dtos::SubscriptionListResponse>,
         core::response::ApiResponse<modules::transactions::dtos::SubscriptionResponse>,
-        core::response::ApiResponse<modules::transactions::dtos::SubscriptionSummaryResponse>,
         // ================================
     )),
     tags(
