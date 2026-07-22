@@ -96,15 +96,15 @@ pub struct HolidayListResponse {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateEventRequest {
-    #[validate(length(min = 1, max = 100, message = "Title ต้องมี 1-100 ตัวอักษร"))]
+    #[validate(length(min = 1, max = 100, message = "Title must be 1-100 characters"))]
     pub title: String,
-    #[validate(length(max = 3000, message = "Description ต้องไม่เกิน 3000 ตัวอักษร"))]
+    #[validate(length(max = 3000, message = "Description must not exceed 3000 characters"))]
     pub description: Option<String>,
     #[schema(value_type = String, example = "2026-06-01T13:00:00+07:00")]
     pub start_date: DateTime<FixedOffset>,
     #[schema(value_type = String, example = "2026-06-03T18:00:00+07:00")]
     pub end_date: DateTime<FixedOffset>,
-    #[validate(length(min = 1, max = 20, message = "Tag ต้องมี 1-20 ตัวอักษร"))]
+    #[validate(length(min = 1, max = 20, message = "Tag must be 1-20 characters"))]
     pub tag: String,
 }
 
@@ -124,15 +124,15 @@ pub struct EventResponse {
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateEventRequest {
     pub user_id: Uuid,
-    #[validate(length(min = 1, max = 100, message = "Title ต้องมี 1-100 ตัวอักษร"))]
+    #[validate(length(min = 1, max = 100, message = "Title must be 1-100 characters"))]
     pub title: String,
-    #[validate(length(max = 3000, message = "Description ต้องไม่เกิน 3000 ตัวอักษร"))]
+    #[validate(length(max = 3000, message = "Description must not exceed 3000 characters"))]
     pub description: Option<String>,
     #[schema(value_type = String, example = "2026-06-01T13:00:00+07:00")]
     pub start_date: DateTime<FixedOffset>,
     #[schema(value_type = String, example = "2026-06-01T18:00:00+07:00")]
     pub end_date: DateTime<FixedOffset>,
-    #[validate(length(min = 1, max = 20, message = "Tag ต้องมี 1-20 ตัวอักษร"))]
+    #[validate(length(min = 1, max = 20, message = "Tag must be 1-20 characters"))]
     pub tag: String,
 }
 

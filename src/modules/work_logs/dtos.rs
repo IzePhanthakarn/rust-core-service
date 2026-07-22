@@ -51,11 +51,11 @@ pub struct CreateWorkLogRequest {
     pub title: String,
     #[validate(custom(function = "validate_content"))]
     pub content: String,
-    #[validate(range(min = 1, max = 5, message = "Mood score ต้องอยู่ระหว่าง 1-5"))]
+    #[validate(range(min = 1, max = 5, message = "Mood score must be between 1 and 5"))]
     pub mood_score: i32,
-    #[validate(range(min = 1, max = 5, message = "Productivity score ต้องอยู่ระหว่าง 1-5"))]
+    #[validate(range(min = 1, max = 5, message = "Productivity score must be between 1 and 5"))]
     pub productivity_score: i32,
-    #[validate(length(max = 10, message = "Tags ต้องไม่เกิน 10 รายการ"))]
+    #[validate(length(max = 10, message = "Tags must not exceed 10 items"))]
     #[validate(custom(function = "validate_tags"))]
     pub tags: Vec<String>,
     pub date_logged: DateTime<Utc>,
@@ -68,11 +68,11 @@ pub struct UpdateWorkLogRequest {
     pub title: String,
     #[validate(custom(function = "validate_content"))]
     pub content: String,
-    #[validate(range(min = 1, max = 5, message = "Mood score ต้องอยู่ระหว่าง 1-5"))]
+    #[validate(range(min = 1, max = 5, message = "Mood score must be between 1 and 5"))]
     pub mood_score: i32,
-    #[validate(range(min = 1, max = 5, message = "Productivity score ต้องอยู่ระหว่าง 1-5"))]
+    #[validate(range(min = 1, max = 5, message = "Productivity score must be between 1 and 5"))]
     pub productivity_score: i32,
-    #[validate(length(max = 10, message = "Tags ต้องไม่เกิน 10 รายการ"))]
+    #[validate(length(max = 10, message = "Tags must not exceed 10 items"))]
     #[validate(custom(function = "validate_tags"))]
     pub tags: Vec<String>,
     pub date_logged: DateTime<Utc>,

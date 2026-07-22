@@ -25,7 +25,7 @@ pub struct AppState {
 impl AppState {
     pub fn get_conn(&self) -> Result<config::database::DbConn, core::errors::AppError> {
         self.db_pool.get().map_err(|_| {
-            core::errors::AppError::InternalServerError("ไม่สามารถเชื่อมต่อฐานข้อมูลได้".to_string())
+            core::errors::AppError::InternalServerError("Unable to connect to the database".to_string())
         })
     }
 }

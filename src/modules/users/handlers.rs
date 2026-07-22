@@ -30,7 +30,7 @@ use crate::{
     params(UserFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูลสำเร็จ", body = ApiResponse<PaginatedData<User>>)
+        (status = 200, description = "Data retrieved successfully", body = ApiResponse<PaginatedData<User>>)
     )
 )]
 pub async fn get_users(
@@ -39,13 +39,13 @@ pub async fn get_users(
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<PaginatedData<User>>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to access this data".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     let data = UserService::get_all_users(&mut conn, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -53,7 +53,7 @@ pub async fn get_users(
     path = "/users/me",
     tag = "Users",
     security(("bearerAuth" = [])),
-    responses((status = 200, description = "ดึงข้อมูลส่วนตัวสำเร็จ", body = ApiResponse<MeResponse>))
+    responses((status = 200, description = "Personal data retrieved successfully", body = ApiResponse<MeResponse>))
 )]
 pub async fn get_me(
     State(state): State<AppState>,
@@ -62,7 +62,7 @@ pub async fn get_me(
     let mut conn = state.get_conn()?;
 
     let (user, profile) = UserRepository::get_user_with_profile(&mut conn, claims.sub)
-        .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งาน".to_string()))?;
+        .map_err(|_| AppError::BadRequest("User data not found".to_string()))?;
 
     let data = MeResponse {
         id: user.id,
@@ -72,7 +72,7 @@ pub async fn get_me(
         role: user.role,
     };
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลส่วนตัวสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Personal data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -82,8 +82,8 @@ pub async fn get_me(
     request_body = UpdateProfileRequest,
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "อัปเดตข้อมูลสำเร็จ", body = ApiResponse<MeResponse>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง / ไม่พบผู้ใช้", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Data updated successfully", body = ApiResponse<MeResponse>),
+        (status = 400, description = "Invalid data / user not found", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn update_me(
@@ -96,7 +96,7 @@ pub async fn update_me(
     let updated_profile = UserService::update_profile(&mut conn, claims.sub, &payload)?;
 
     let (user, _) = UserRepository::get_user_with_profile(&mut conn, claims.sub)
-        .map_err(|_| AppError::BadRequest("ไม่พบบัญชีผู้ใช้งานของคุณในระบบ".to_string()))?;
+        .map_err(|_| AppError::BadRequest("Your user account was not found in the system".to_string()))?;
 
     let data = MeResponse {
         id: user.id,
@@ -106,7 +106,7 @@ pub async fn update_me(
         role: user.role,
     };
 
-    Ok(Json(ApiResponse::success(200, "อัปเดตข้อมูลโปรไฟล์สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Profile updated successfully", data)))
 }
 
 #[utoipa::path(
@@ -114,14 +114,14 @@ pub async fn update_me(
     path = "/users/{id}/status",
     tag = "Users",
     params(
-        ("id" = Uuid, Path, description = "ID ของผู้ใช้งานที่ต้องการเปลี่ยนสถานะ")
+        ("id" = Uuid, Path, description = "ID of the user whose status should be changed")
     ),
     request_body = UpdateUserStatusRequest,
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "เปลี่ยนสถานะผู้ใช้สำเร็จ", body = ApiResponse<EmptyData>),
-        (status = 400, description = "ข้อมูลผิดพลาด", body = ApiResponse<EmptyData>),
-        (status = 403, description = "สิทธิ์ไม่เพียงพอ", body = ApiResponse<EmptyData>)
+        (status = 200, description = "User status changed successfully", body = ApiResponse<EmptyData>),
+        (status = 400, description = "Invalid data", body = ApiResponse<EmptyData>),
+        (status = 403, description = "Insufficient permissions", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn update_user_status(
@@ -131,19 +131,19 @@ pub async fn update_user_status(
     ValidatedJson(payload): ValidatedJson<UpdateUserStatusRequest>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เปลี่ยนสถานะผู้ใช้งาน".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to change user status".to_string()));
     }
 
     if claims.sub == target_user_id {
         return Err(AppError::BadRequest(
-            "คุณไม่สามารถเปลี่ยนสถานะบัญชีของตัวเองได้".to_string(),
+            "You cannot change the status of your own account".to_string(),
         ));
     }
 
     let mut conn = state.get_conn()?;
     UserService::update_user_status(&mut conn, target_user_id, &payload.status)?;
 
-    Ok(Json(ApiResponse::success_without_data(200, "เปลี่ยนสถานะผู้ใช้สำเร็จ")))
+    Ok(Json(ApiResponse::success_without_data(200, "User status changed successfully")))
 }
 
 #[utoipa::path(
@@ -151,13 +151,13 @@ pub async fn update_user_status(
     path = "/users/{id}",
     tag = "Users",
     params(
-        ("id" = Uuid, Path, description = "ID ของผู้ใช้งานที่ต้องการดูข้อมูล")
+        ("id" = Uuid, Path, description = "ID of the user whose data to view")
     ),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูลสำเร็จ", body = ApiResponse<UserDetailResponse>),
-        (status = 400, description = "ไม่พบผู้ใช้งาน", body = ApiResponse<EmptyData>),
-        (status = 403, description = "สิทธิ์ไม่เพียงพอ", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Data retrieved successfully", body = ApiResponse<UserDetailResponse>),
+        (status = 400, description = "User not found", body = ApiResponse<EmptyData>),
+        (status = 403, description = "Insufficient permissions", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn get_user_by_id(
@@ -166,13 +166,13 @@ pub async fn get_user_by_id(
     Path(target_user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserDetailResponse>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้อื่น".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to view other users' data".to_string()));
     }
 
     let mut conn = state.get_conn()?;
 
     let (user, profile) = UserRepository::get_user_with_profile(&mut conn, target_user_id)
-        .map_err(|_| AppError::BadRequest("ไม่พบข้อมูลผู้ใช้งานนี้ในระบบ".to_string()))?;
+        .map_err(|_| AppError::BadRequest("This user's data was not found in the system".to_string()))?;
 
     let data = UserDetailResponse {
         id: user.id,
@@ -183,7 +183,7 @@ pub async fn get_user_by_id(
         role: user.role,
     };
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลผู้ใช้งานสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "User data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -191,13 +191,13 @@ pub async fn get_user_by_id(
     path = "/users/{id}",
     tag = "Users",
     params(
-        ("id" = Uuid, Path, description = "ID ของผู้ใช้งานที่ต้องการลบ")
+        ("id" = Uuid, Path, description = "ID of the user to delete")
     ),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ลบบัญชีผู้ใช้งานสำเร็จ", body = ApiResponse<EmptyData>),
-        (status = 400, description = "ไม่พบผู้ใช้ / พยายามลบตัวเอง", body = ApiResponse<EmptyData>),
-        (status = 403, description = "สิทธิ์ไม่เพียงพอ", body = ApiResponse<EmptyData>)
+        (status = 200, description = "User account deleted successfully", body = ApiResponse<EmptyData>),
+        (status = 400, description = "User not found / attempted to delete self", body = ApiResponse<EmptyData>),
+        (status = 403, description = "Insufficient permissions", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn delete_user_by_id(
@@ -206,15 +206,15 @@ pub async fn delete_user_by_id(
     Path(target_user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<EmptyData>>, AppError> {
     if !claims.is_super_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบบัญชีผู้ใช้งาน".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to delete user accounts".to_string()));
     }
 
     if claims.sub == target_user_id {
-        return Err(AppError::BadRequest("คุณไม่สามารถลบบัญชีของตัวเองได้".to_string()));
+        return Err(AppError::BadRequest("You cannot delete your own account".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     UserService::delete_user(&mut conn, target_user_id)?;
 
-    Ok(Json(ApiResponse::success_without_data(200, "ลบบัญชีผู้ใช้งานออกจากระบบสำเร็จ")))
+    Ok(Json(ApiResponse::success_without_data(200, "User account deleted from the system successfully")))
 }

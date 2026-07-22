@@ -31,7 +31,7 @@ use crate::{
     params(PropertyFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูล Property Type สำเร็จ", body = ApiResponse<PaginatedData<PropertyTypeData>>),
+        (status = 200, description = "Property Type retrieved successfully", body = ApiResponse<PaginatedData<PropertyTypeData>>),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -41,13 +41,13 @@ pub async fn get_all_property_type(
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<PaginatedData<PropertyTypeData>>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูล Property".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to view Property data".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     let result = PropertyService::get_property_type(&mut conn, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", result)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", result)))
 }
 
 #[utoipa::path(
@@ -56,8 +56,8 @@ pub async fn get_all_property_type(
     tag = "Properties",
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูล Property Type สำเร็จ", body = ApiResponse<PropertyResponse>),
-        (status = 404, description = "ไม่พบ Property Type ที่ระบุ"),
+        (status = 200, description = "Property Type retrieved successfully", body = ApiResponse<PropertyResponse>),
+        (status = 404, description = "Specified Property Type not found"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -67,13 +67,13 @@ pub async fn get_one_property_type(
     Path(property_type_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<PropertyResponse>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูล Property".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to view Property data".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     let property_data = PropertyService::get_one_property_type(&mut conn, property_type_id)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูล Property Type สำเร็จ", property_data)))
+    Ok(Json(ApiResponse::success(200, "Property Type retrieved successfully", property_data)))
 }
 
 #[utoipa::path(
@@ -82,8 +82,8 @@ pub async fn get_one_property_type(
     tag = "Properties",
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูล Property Type สำเร็จ", body = ApiResponse<PropertyResponse>),
-        (status = 404, description = "ไม่พบ Property Type ที่ระบุ"),
+        (status = 200, description = "Property Type retrieved successfully", body = ApiResponse<PropertyResponse>),
+        (status = 404, description = "Specified Property Type not found"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -93,13 +93,13 @@ pub async fn get_property_type_by_code(
     Path(code): Path<String>,
 ) -> Result<Json<ApiResponse<PropertyResponse>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ดูข้อมูล Property".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to view Property data".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     let property_data = PropertyService::get_one_property_type_by_code(&mut conn, &code)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูล Property Type สำเร็จ", property_data)))
+    Ok(Json(ApiResponse::success(200, "Property Type retrieved successfully", property_data)))
 }
 
 #[utoipa::path(
@@ -120,7 +120,7 @@ pub async fn create_property_type(
     ValidatedJson(payload): ValidatedJson<CreatePropertyTypeRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<PropertyType>>), AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Property".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to create Property".to_string()));
     }
 
     let mut conn = state.get_conn()?;
@@ -134,7 +134,7 @@ pub async fn create_property_type(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Property Type สำเร็จ", new_property)),
+        Json(ApiResponse::success(201, "Property Type created successfully", new_property)),
     ))
 }
 
@@ -156,7 +156,7 @@ pub async fn update_property_type(
     ValidatedJson(payload): ValidatedJson<UpdatePropertyTypeRequest>,
 ) -> Result<Json<ApiResponse<PropertyType>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Property".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to edit Property".to_string()));
     }
 
     let mut conn = state.get_conn()?;
@@ -169,7 +169,7 @@ pub async fn update_property_type(
         claims.sub,
     )?;
 
-    Ok(Json(ApiResponse::success(200, "แก้ไข Property Type สำเร็จ", updated_property)))
+    Ok(Json(ApiResponse::success(200, "Property Type updated successfully", updated_property)))
 }
 
 #[utoipa::path(
@@ -189,13 +189,13 @@ pub async fn delete_property_type(
     Path(property_type_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ Property".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to delete Property".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     PropertyService::delete_property_type(&mut conn, property_type_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Property Type สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Property Type deleted successfully"))))
 }
 
 #[utoipa::path(
@@ -216,7 +216,7 @@ pub async fn create_property_option(
     ValidatedJson(payload): ValidatedJson<CreatePropertyOptionRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<PropertyOption>>), AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์สร้าง Property Option".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to create Property Option".to_string()));
     }
 
     let mut conn = state.get_conn()?;
@@ -230,7 +230,7 @@ pub async fn create_property_option(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Property Option สำเร็จ", new_option)),
+        Json(ApiResponse::success(201, "Property Option created successfully", new_option)),
     ))
 }
 
@@ -254,7 +254,7 @@ pub async fn update_property_option_status(
 ) -> Result<(StatusCode, Json<ApiResponse<PropertyOptionData>>), AppError> {
     if !claims.is_admin() {
         return Err(AppError::Forbidden(
-            "คุณไม่มีสิทธิ์เปลี่ยนสถานะ Property Option".to_string(),
+            "You do not have permission to change Property Option status".to_string(),
         ));
     }
 
@@ -264,7 +264,7 @@ pub async fn update_property_option_status(
 
     Ok((
         StatusCode::OK,
-        Json(ApiResponse::success(200, "แก้ไขสถานะ Property Option สําเร็จ", result)),
+        Json(ApiResponse::success(200, "Property Option status updated successfully", result)),
     ))
 }
 
@@ -286,7 +286,7 @@ pub async fn update_property_option(
     ValidatedJson(payload): ValidatedJson<UpdatePropertyOptionRequest>,
 ) -> Result<Json<ApiResponse<PropertyOptionData>>, AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Property Option".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to edit Property Option".to_string()));
     }
 
     let mut conn = state.get_conn()?;
@@ -299,7 +299,7 @@ pub async fn update_property_option(
         payload.is_active,
     )?;
 
-    Ok(Json(ApiResponse::success(200, "แก้ไข Property Option สำเร็จ", updated_option)))
+    Ok(Json(ApiResponse::success(200, "Property Option updated successfully", updated_option)))
 }
 
 #[utoipa::path(
@@ -319,11 +319,11 @@ pub async fn delete_property_option(
     Path(property_option_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<()>>), AppError> {
     if !claims.is_admin() {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ Property Option".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to delete Property Option".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     PropertyService::delete_property_option(&mut conn, property_option_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Property Option สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Property Option deleted successfully"))))
 }

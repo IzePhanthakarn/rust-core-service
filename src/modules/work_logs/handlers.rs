@@ -36,7 +36,7 @@ pub async fn get_all_work_logs(
     let mut conn = state.get_conn()?;
     let data = WorkLogService::get_all_work_logs(&mut conn, claims.sub, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -81,7 +81,7 @@ pub async fn create_work_log(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Work Log สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Work Log created successfully", result)),
     ))
 }
 
@@ -103,13 +103,13 @@ pub async fn update_work_log(
     ValidatedJson(payload): ValidatedJson<UpdateWorkLogRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<WorkLogResponse>>), AppError> {
     if claims.sub != payload.user_id {
-        return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข Work Log นี้".to_string()));
+        return Err(AppError::Forbidden("You do not have permission to edit this Work Log.".to_string()));
     }
 
     let mut conn = state.get_conn()?;
     let result = WorkLogService::update_work_log(&mut conn, &payload, claims.sub, work_log_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "แก้ไข Work Log สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Work Log updated successfully", result))))
 }
 
 #[utoipa::path(
@@ -130,5 +130,5 @@ pub async fn delete_work_log(
     let mut conn = state.get_conn()?;
     WorkLogService::delete_work_log(&mut conn, work_log_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Work Log สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Work Log deleted successfully"))))
 }

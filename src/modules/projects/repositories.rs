@@ -116,7 +116,7 @@ impl ProjectRepository {
         .execute(conn)
     }
 
-    /// นับจำนวนสมาชิกของหลายโปรเจกต์พร้อมกันในคิวรีเดียว (กัน N+1)
+    /// Counts members for multiple projects at once in a single query (avoids N+1)
     pub fn count_members_by_projects(
         conn: &mut PgConnection,
         project_ids: &[Uuid],
@@ -242,7 +242,7 @@ impl ProjectRepository {
             .load::<Board>(conn)
     }
 
-    /// ดึงคอลัมน์ของหลายบอร์ดในคิวรีเดียว (กัน N+1) เรียงตาม order_index
+    /// Fetches columns for multiple boards in a single query (avoids N+1), ordered by order_index
     pub fn find_columns_by_boards(
         conn: &mut PgConnection,
         board_ids: &[Uuid],

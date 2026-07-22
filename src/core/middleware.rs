@@ -2,30 +2,30 @@ use crate::core::{errors::AppError, jwt::verify_token};
 use axum::{extract::Request, http::header, middleware::Next, response::Response};
 
 pub async fn auth_guard(mut req: Request, next: Next) -> Result<Response, AppError> {
-    // 1. ดึง Authorization Header
+    // 1. Get the Authorization header
     let auth_header = req
         .headers()
         .get(header::AUTHORIZATION)
         .and_then(|val| val.to_str().ok())
-        .ok_or_else(|| AppError::Unauthorized("ไม่พบ Authorization Header".to_string()))?;
+        .ok_or_else(|| AppError::Unauthorized("Authorization header not found".to_string()))?;
 
-    // 2. เช็คคำว่า "Bearer "
+    // 2. Check for the "Bearer " prefix
     if !auth_header.starts_with("Bearer ") {
-        return Err(AppError::Unauthorized("รูปแบบ Token ไม่ถูกต้อง".to_string()));
+        return Err(AppError::Unauthorized("Invalid token format".to_string()));
     }
 
-    let token = &auth_header[7..]; // ตัดคำว่า "Bearer " ออก
+    let token = &auth_header[7..]; // Strip the "Bearer " prefix
 
-    // 3. ถอดรหัส Token
+    // 3. Decode the token
     let claims = verify_token(token)
-        .map_err(|_| AppError::Unauthorized("Token ไม่ถูกต้องหรือหมดอายุ".to_string()))?;
+        .map_err(|_| AppError::Unauthorized("Invalid or expired token".to_string()))?;
 
-    // 4. เช็คว่าเป็น Access Token เท่านั้น (ห้ามเอา Refresh Token มายิง API)
+    // 4. Check that it is an access token only (refresh tokens must not be used to call the API)
     if claims.token_type != "access" {
-        return Err(AppError::Unauthorized("กรุณาใช้ Access Token".to_string()));
+        return Err(AppError::Unauthorized("Please use an access token".to_string()));
     }
 
-    // 5. ฝังข้อมูล Claims ลงใน Request เพื่อให้ Handler เอาไปใช้ต่อได้ (เช่น เช็ค Role)
+    // 5. Embed the claims into the request so the handler can use them later (e.g. to check role)
     req.extensions_mut().insert(claims);
 
     Ok(next.run(req).await)

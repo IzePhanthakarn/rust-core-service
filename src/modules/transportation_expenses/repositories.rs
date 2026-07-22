@@ -67,8 +67,9 @@ impl TransportationExpenseRepository {
         Ok((items, total))
     }
 
-    /// รายการค่าใช้จ่ายเดินทางทั้งหมดของผู้ใช้ในช่วงเดือน/ปีที่ระบุ (ไม่ผูก filter category/keyword
-    /// และไม่แบ่งหน้า) ใช้สำหรับคำนวณ stats — ถ้าไม่ระบุเดือน/ปีจะคืนทุกรายการของผู้ใช้
+    /// All of a user's transportation expenses in the specified month/year range (independent of
+    /// the category/keyword filters and not paginated). Used to calculate stats — if month/year
+    /// is not specified, returns all of the user's items
     pub fn find_transportation_expenses_for_stats(
         conn: &mut PgConnection,
         user_id: Uuid,

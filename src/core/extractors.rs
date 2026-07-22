@@ -3,10 +3,10 @@ use axum::extract::{FromRequest, Request, rejection::JsonRejection};
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
-// สร้าง Struct หุ้ม JSON เอาไว้
+// Struct that wraps JSON
 pub struct ValidatedJson<T>(pub T);
 
-// สั่งให้ Axum รัน Logic นี้ทุกครั้งที่มีการรับ JSON เข้ามา
+// Tell Axum to run this logic every time JSON is received
 impl<T, S> FromRequest<S> for ValidatedJson<T>
 where
     T: DeserializeOwned + Validate,
@@ -16,16 +16,16 @@ where
     type Rejection = AppError;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
-        // 1. ดักจับ Error ตอนแปลง JSON (เช่น ส่ง String ว่างมาใส่ UUID)
+        // 1. Catch errors while converting JSON (e.g. an empty string sent for a UUID)
         let axum::Json(value) =
             axum::Json::<T>::from_request(req, state)
                 .await
                 .map_err(|rejection| {
-                    // แปลง JsonRejection ของ Axum ให้กลายเป็น AppError ของเรา
-                    AppError::BadRequest(format!("ข้อมูลไม่ถูกต้อง หรือชนิดข้อมูลไม่ตรงกัน: {}", rejection))
+                    // Convert Axum's JsonRejection into our AppError
+                    AppError::BadRequest(format!("Invalid data or data type mismatch: {}", rejection))
                 })?;
 
-        // 2. รัน Validator อัตโนมัติ (ดักจับรหัสผ่านสั้น, อีเมลผิดรูปแบบ ฯลฯ)
+        // 2. Run the validator automatically (catches short passwords, malformed emails, etc.)
         value
             .validate()
             .map_err(|err| AppError::BadRequest(err.to_string()))?;

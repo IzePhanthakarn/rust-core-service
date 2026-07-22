@@ -30,7 +30,7 @@ pub struct CreateTodoListRequest {
     pub title: String,
     #[validate(custom(function = "validate_description"))]
     pub description: Option<String>,
-    #[validate(length(max = 20, message = "Color ต้องไม่เกิน 20 ตัวอักษร"))]
+    #[validate(length(max = 20, message = "Color must not exceed 20 characters"))]
     pub color: Option<String>,
 }
 
@@ -40,7 +40,7 @@ pub struct UpdateTodoListRequest {
     pub title: String,
     #[validate(custom(function = "validate_description"))]
     pub description: Option<String>,
-    #[validate(length(max = 20, message = "Color ต้องไม่เกิน 20 ตัวอักษร"))]
+    #[validate(length(max = 20, message = "Color must not exceed 20 characters"))]
     pub color: Option<String>,
 }
 
@@ -57,7 +57,7 @@ pub struct CreateTodoItemRequest {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct ReorderTodoItemsRequest {
-    #[validate(length(min = 1, message = "ต้องมีรายการ item อย่างน้อย 1 รายการ"))]
+    #[validate(length(min = 1, message = "At least one item is required"))]
     pub item_ids: Vec<Uuid>,
 }
 

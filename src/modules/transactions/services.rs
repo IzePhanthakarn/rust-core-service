@@ -26,10 +26,10 @@ use crate::{
     },
 };
 
-/// จำนวนรายการค่าใช้จ่ายสูงสุดที่ส่งกลับ
+/// Maximum number of top expense items returned
 const TOP_EXPENSES_LIMIT: usize = 4;
 
-/// จำนวนหมวดหมู่รายจ่ายสูงสุดที่ส่งกลับใน stats ของ transaction
+/// Maximum number of top expense categories returned in transaction stats
 const TOP_EXPENSE_CATEGORIES_LIMIT: usize = 5;
 
 pub struct TransactionService;
@@ -76,8 +76,8 @@ impl TransactionService {
         })
     }
 
-    /// คำนวณสถิติของ transaction ในช่วงเดือน/ปีที่ระบุ (global ต่อผู้ใช้ ไม่ผูกกับ filter
-    /// type/category/keyword) หน่วยเป็นสตางค์
+    /// Calculates transaction statistics for the specified month/year range (global per user,
+    /// independent of the type/category/keyword filters). Unit is satang
     fn build_transaction_stats(
         transactions: &[Transaction],
         month: Option<&str>,
@@ -85,7 +85,7 @@ impl TransactionService {
     ) -> TransactionStatsResponse {
         let mut total_income: i64 = 0;
         let mut total_expense: i64 = 0;
-        // category -> (ยอดรวม, จำนวนรายการ)
+        // category -> (total amount, item count)
         let mut category_map: HashMap<String, (i64, i64)> = HashMap::new();
 
         for transaction in transactions {
@@ -130,9 +130,9 @@ impl TransactionService {
         }
     }
 
-    /// จำนวนวันของช่วงที่ใช้คำนวณค่าเฉลี่ยต่อวัน
-    /// - ถ้าระบุเดือน/ปี ใช้จำนวนวันจริงของเดือนนั้น
-    /// - ถ้าไม่ระบุ ใช้จำนวนวันระหว่างรายการแรกสุดถึงล่าสุดของผลลัพธ์ (อย่างน้อย 1 วัน)
+    /// Number of days in the range used to calculate the daily average
+    /// - If month/year is specified, uses the actual number of days in that month
+    /// - If not specified, uses the number of days between the earliest and latest result items (at least 1 day)
     fn days_in_range(transactions: &[Transaction], month: Option<&str>, year: Option<&str>) -> i64 {
         if let (Some(month), Some(year)) = (
             month.and_then(|m| m.parse::<u32>().ok()),
@@ -247,7 +247,7 @@ impl TransactionService {
         Ok(SubscriptionListResponse { items, stats })
     }
 
-    /// คำนวณสถิติจากรายการ active ทั้งหมด (global ไม่ผูกกับ filter) หน่วยเป็นสตางค์
+    /// Calculates statistics from all active items (global, independent of the filter). Unit is satang
     fn build_subscription_stats(
         active_subscriptions: &[Subscription],
         total_count: i64,
@@ -262,7 +262,7 @@ impl TransactionService {
         let mut passed_amount: i64 = 0;
         let mut monthly_count: i64 = 0;
         let mut yearly_count: i64 = 0;
-        // category -> (ยอดรายเดือน normalize, จำนวนรายการ)
+        // category -> (normalized monthly amount, item count)
         let mut category_map: HashMap<Option<String>, (i64, i64)> = HashMap::new();
 
         for subscription in active_subscriptions {
@@ -280,8 +280,8 @@ impl TransactionService {
                 }
             }
 
-            // เฉพาะรายการที่ครบกำหนดตัดเงินในเดือนนี้ (รายเดือนทุกตัว + รายปีที่ตรงเดือน)
-            // ถ้าวันตัดผ่านไปแล้ว = จ่ายแล้ว, ยังไม่ถึง = ยังเหลือ
+            // Only items due for billing this month (all monthly items + yearly items matching this month)
+            // If the billing date has passed = already paid, not yet reached = still remaining
             if let Some(billing_date) = current_month_billing_date(subscription, today) {
                 if billing_date < today {
                     passed_count += 1;
@@ -429,19 +429,19 @@ impl TransactionService {
         Ok(())
     }
 
-    /// รายปีต้องระบุเดือนที่ตัดเงิน ส่วนรายเดือนต้องไม่มีเดือน (ตรงกับ CHECK constraint ฝั่ง DB)
+    /// Yearly billing requires the billing month to be specified, while monthly billing must not have a month (matches the CHECK constraint on the DB side)
     fn resolve_billing_month(
         billing_cycle: BillingCycle,
         billing_month: Option<i32>,
     ) -> Result<Option<i32>, AppError> {
         match billing_cycle {
             BillingCycle::Yearly => billing_month.map(Some).ok_or_else(|| {
-                AppError::BadRequest("ต้องระบุ billing_month เมื่อจ่ายแบบรายปี".to_string())
+                AppError::BadRequest("billing_month must be specified for yearly billing".to_string())
             }),
             BillingCycle::Monthly => {
                 if billing_month.is_some() {
                     return Err(AppError::BadRequest(
-                        "จ่ายแบบรายเดือนต้องไม่ระบุ billing_month".to_string(),
+                        "billing_month must not be specified for monthly billing".to_string(),
                     ));
                 }
 
@@ -459,7 +459,7 @@ impl TransactionService {
             .map_err(|_| AppError::NotFound("Transaction not found".to_string()))?;
 
         if transaction.user_id != user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Transaction นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to access this Transaction".to_string()));
         }
 
         Ok(transaction)
@@ -474,7 +474,7 @@ impl TransactionService {
             .map_err(|_| AppError::NotFound("Subscription not found".to_string()))?;
 
         if subscription.user_id != user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Subscription นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to access this Subscription".to_string()));
         }
 
         Ok(subscription)
@@ -485,7 +485,7 @@ fn normalize_optional(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|text| !text.is_empty())
 }
 
-/// แปลงยอดของ subscription ให้เป็นค่าใช้จ่ายต่อเดือน (รายปีหาร 12)
+/// Converts a subscription's amount into a monthly expense (yearly amount divided by 12)
 fn normalize_monthly(subscription: &Subscription) -> i64 {
     match subscription.billing_cycle {
         BillingCycle::Monthly => subscription.amount,
@@ -493,7 +493,7 @@ fn normalize_monthly(subscription: &Subscription) -> i64 {
     }
 }
 
-/// จำนวนวันสูงสุดของเดือน ใช้ clamp billing_day ที่เกิน (เช่น 31 ในเดือน ก.พ.)
+/// Maximum number of days in the month, used to clamp an out-of-range billing_day (e.g. 31 in February)
 fn last_day_of_month(year: i32, month: u32) -> u32 {
     let (next_year, next_month) = if month == 12 {
         (year + 1, 1)
@@ -507,15 +507,15 @@ fn last_day_of_month(year: i32, month: u32) -> u32 {
     (first_of_next_month - Duration::days(1)).day()
 }
 
-/// สร้างวันตัดเงินของเดือนที่กำหนด โดย clamp วันให้ไม่เกินวันสิ้นเดือน
+/// Builds the billing date for the given month, clamping the day so it does not exceed the last day of the month
 fn build_billing_date(year: i32, month: u32, billing_day: i32) -> NaiveDate {
     let day = (billing_day.max(1) as u32).min(last_day_of_month(year, month));
 
     NaiveDate::from_ymd_opt(year, month, day).expect("day is clamped within the month")
 }
 
-/// วันตัดเงินของเดือนปัจจุบัน — คืน None ถ้ารายการนี้ไม่ได้ครบกำหนดในเดือนนี้
-/// (รายเดือนครบทุกเดือน, รายปีครบเฉพาะเดือนที่ตรง billing_month)
+/// The billing date for the current month — returns None if this item is not due this month
+/// (monthly items are due every month, yearly items are due only in the month matching billing_month)
 fn current_month_billing_date(subscription: &Subscription, today: NaiveDate) -> Option<NaiveDate> {
     match subscription.billing_cycle {
         BillingCycle::Monthly => Some(build_billing_date(

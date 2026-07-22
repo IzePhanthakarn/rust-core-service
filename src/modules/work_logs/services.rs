@@ -63,7 +63,7 @@ impl WorkLogService {
             .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
 
         if user_id != work_log.user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Work Log นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to access this Work Log.".to_string()));
         }
 
         let work_log_tags =
@@ -147,7 +147,7 @@ impl WorkLogService {
             .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
 
         if user_id != find_work_log.user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Work Log นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to access this Work Log.".to_string()));
         }
 
         conn.transaction::<WorkLogResponse, AppError, _>(|conn| {
@@ -196,7 +196,7 @@ impl WorkLogService {
             .map_err(|_| AppError::NotFound("Work Log not found".to_string()))?;
 
         if work_log.user_id != user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ Work Log นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to delete this Work Log.".to_string()));
         }
 
         conn.transaction::<(), AppError, _>(|conn| {

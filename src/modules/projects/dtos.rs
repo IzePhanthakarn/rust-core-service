@@ -6,7 +6,7 @@ use validator::{Validate, ValidationError};
 
 use crate::modules::projects::models::{NoteType, ProjectStatus, TaskPriority, TaskType};
 
-/// แยกแยะ "ไม่ส่ง field มา" (None ชั้นนอก = ไม่แตะต้อง) ออกจาก "ส่ง null มา" (Some(None) = เคลียร์เป็น NULL)
+/// Distinguishes "field not sent" (outer None = leave untouched) from "null sent" (Some(None) = clear to NULL)
 fn double_option<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
 where
     T: Deserialize<'de>,
@@ -29,7 +29,7 @@ fn validate_title(title: &str) -> Result<(), ValidationError> {
 pub struct CreateProjectRequest {
     #[validate(custom(function = "validate_title"))]
     pub title: String,
-    #[validate(length(min = 1, message = "description ห้ามว่าง"))]
+    #[validate(length(min = 1, message = "description must not be empty"))]
     pub description: String,
     pub status: Option<ProjectStatus>,
     pub start_date: DateTime<Utc>,
@@ -40,7 +40,7 @@ pub struct CreateProjectRequest {
 pub struct UpdateProjectRequest {
     #[validate(custom(function = "validate_title"))]
     pub title: String,
-    #[validate(length(min = 1, message = "description ห้ามว่าง"))]
+    #[validate(length(min = 1, message = "description must not be empty"))]
     pub description: String,
     pub status: ProjectStatus,
     pub start_date: DateTime<Utc>,
@@ -51,7 +51,7 @@ pub struct UpdateProjectRequest {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct AddProjectMemberRequest {
-    #[validate(email(message = "รูปแบบอีเมลไม่ถูกต้อง"))]
+    #[validate(email(message = "Invalid email format"))]
     pub email: String,
 }
 
@@ -87,7 +87,7 @@ pub struct UpdateNoteRequest {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateSprintRequest {
-    #[validate(length(min = 1, max = 255, message = "name ต้องมีความยาว 1-255 ตัวอักษร"))]
+    #[validate(length(min = 1, max = 255, message = "name must be 1-255 characters long"))]
     pub name: String,
     pub goal: Option<String>,
     pub start_date: DateTime<Utc>,
@@ -96,7 +96,7 @@ pub struct CreateSprintRequest {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateSprintRequest {
-    #[validate(length(min = 1, max = 255, message = "name ต้องมีความยาว 1-255 ตัวอักษร"))]
+    #[validate(length(min = 1, max = 255, message = "name must be 1-255 characters long"))]
     pub name: Option<String>,
     #[serde(default, deserialize_with = "double_option")]
     #[schema(value_type = Option<String>)]
@@ -113,20 +113,20 @@ pub struct UpdateSprintRequest {
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateTaskRequest {
     pub project_id: Uuid,
-    /// ถ้าไม่ระบุจะถูกจัดเข้า Backlogs (sprint_id = NULL)
+    /// If not specified, it will be placed into Backlogs (sprint_id = NULL)
     pub sprint_id: Option<Uuid>,
-    /// ถ้าไม่ระบุจะถูกวางไว้คอลัมน์แรกสุด (order_index ต่ำสุด) ของบอร์ดโปรเจกต์
+    /// If not specified, it will be placed in the first column (lowest order_index) of the project board
     pub column_id: Option<Uuid>,
     #[validate(custom(function = "validate_title"))]
     pub title: String,
-    #[validate(length(min = 1, message = "description ห้ามว่าง"))]
+    #[validate(length(min = 1, message = "description must not be empty"))]
     pub description: String,
     #[serde(rename = "type")]
     pub type_: TaskType,
     pub priority: TaskPriority,
     pub story_points: Option<i32>,
     pub assignee_id: Option<Uuid>,
-    #[validate(length(max = 20, message = "tag ต้องไม่เกิน 20 ตัวอักษร"))]
+    #[validate(length(max = 20, message = "tag must not exceed 20 characters"))]
     pub tag: Option<String>,
 }
 
@@ -134,7 +134,7 @@ pub struct CreateTaskRequest {
 pub struct UpdateTaskRequest {
     #[validate(custom(function = "validate_title"))]
     pub title: Option<String>,
-    #[validate(length(min = 1, message = "description ห้ามว่าง"))]
+    #[validate(length(min = 1, message = "description must not be empty"))]
     pub description: Option<String>,
     pub column_id: Option<Uuid>,
     #[serde(rename = "type")]
@@ -158,7 +158,7 @@ pub struct UpdateTaskRequest {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateCommentRequest {
-    #[validate(length(min = 1, message = "content ห้ามว่าง"))]
+    #[validate(length(min = 1, message = "content must not be empty"))]
     pub content: String,
 }
 
@@ -214,7 +214,7 @@ pub struct NoteResponse {
     pub updated_by: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    /// โน้ต/โฟลเดอร์ลูกที่อยู่ภายใต้รายการนี้ (รองรับ folder ซ้อน folder)
+    /// Child notes/folders nested under this item (supports folders within folders)
     #[schema(no_recursion)]
     pub children: Vec<NoteResponse>,
 }

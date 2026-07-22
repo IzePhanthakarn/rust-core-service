@@ -39,8 +39,8 @@ impl PropertyService {
             .map_err(|e| {
                 debug!("Database Error: {:?}", e);
                 map_diesel_error(
-                    "ไม่พบ Property Type ที่ระบุ",
-                    "ไม่สามารถดึงข้อมูล Property Type ได้",
+                    "Specified Property Type not found",
+                    "Unable to retrieve Property Type data",
                 )(e)
             })?;
 
@@ -56,8 +56,8 @@ impl PropertyService {
             PropertyRepository::get_one_property_type_by_code(conn, &upper_code).map_err(|e| {
                 debug!("Database Error: {:?}", e);
                 map_diesel_error(
-                    "ไม่พบ Property Type ที่ระบุ",
-                    "ไม่สามารถดึงข้อมูล Property Type ได้",
+                    "Specified Property Type not found",
+                    "Unable to retrieve Property Type data",
                 )(e)
             })?;
 
@@ -78,7 +78,7 @@ impl PropertyService {
 
         if existing_name.is_some() {
             return Err(AppError::Conflict(format!(
-                "มีชื่อ Property Type '{}' อยู่ในระบบแล้ว",
+                "Property Type name '{}' already exists in the system",
                 name
             )));
         }
@@ -88,7 +88,7 @@ impl PropertyService {
 
         if existing_code.is_some() {
             return Err(AppError::Conflict(format!(
-                "มีรหัส Property Type '{}' อยู่ในระบบแล้ว",
+                "Property Type code '{}' already exists in the system",
                 upper_code
             )));
         }
@@ -104,7 +104,7 @@ impl PropertyService {
         PropertyRepository::create_property_type(conn, new_property)
             .map_err(|e| {
                 eprintln!("Database Error: {:?}", e);
-                AppError::InternalServerError("ไม่สามารถสร้าง Property Type ใหม่ได้".to_string())
+                AppError::InternalServerError("Unable to create new Property Type".to_string())
             })
     }
 
@@ -123,7 +123,7 @@ impl PropertyService {
 
         if existing_name.is_some() {
             return Err(AppError::Conflict(format!(
-                "มีชื่อ Property Type '{}' อยู่ในระบบแล้ว",
+                "Property Type name '{}' already exists in the system",
                 name
             )));
         }
@@ -133,7 +133,7 @@ impl PropertyService {
 
         if existing_code.is_some() {
             return Err(AppError::Conflict(format!(
-                "มีรหัส Property Type '{}' อยู่ในระบบแล้ว",
+                "Property Type code '{}' already exists in the system",
                 upper_code
             )));
         }
@@ -148,7 +148,7 @@ impl PropertyService {
 
         PropertyRepository::update_property_type(conn, updated_property).map_err(|e| {
             eprintln!("Database Error: {:?}", e);
-            AppError::InternalServerError("ไม่สามารถอัปเดต Property Type ได้".to_string())
+            AppError::InternalServerError("Unable to update Property Type".to_string())
         })
     }
 
@@ -157,10 +157,10 @@ impl PropertyService {
         property_id: Uuid,
     ) -> Result<(), AppError> {
         let updated_rows = PropertyRepository::delete_property_type(conn, property_id)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถลบ Property ได้".to_string()))?;
+            .map_err(|_| AppError::InternalServerError("Unable to delete Property".to_string()))?;
 
         if updated_rows == 0 {
-            return Err(AppError::BadRequest("ไม่พบ Property ที่ต้องการลบ".to_string()));
+            return Err(AppError::BadRequest("Property to delete not found".to_string()));
         }
 
         Ok(())
@@ -177,13 +177,13 @@ impl PropertyService {
             PropertyRepository::check_property_options(conn, property_type_id, &value).map_err(
                 |e| {
                     eprintln!("Database Error: {:?}", e);
-                    AppError::InternalServerError("ไม่สามารถตรวจสอบ Property Option ได้".to_string())
+                    AppError::InternalServerError("Unable to verify Property Option".to_string())
                 },
             )?;
 
         if is_have_option_value {
             return Err(AppError::Conflict(format!(
-                "มี Property Option value '{}' อยู่ในระบบแล้ว",
+                "Property Option value '{}' already exists in the system",
                 value
             )));
         }
@@ -192,7 +192,7 @@ impl PropertyService {
             PropertyRepository::count_options_by_property_type_id(conn, property_type_id)
                 .map_err(|e| {
                     eprintln!("Database Error: {:?}", e);
-                    AppError::InternalServerError("ไม่สามารถนับจำนวน Property Option ได้".to_string())
+                    AppError::InternalServerError("Unable to count Property Options".to_string())
                 })?;
 
         let new_option = NewPropertyOption {
@@ -206,7 +206,7 @@ impl PropertyService {
 
         PropertyRepository::create_property_option(conn, new_option).map_err(|e| {
             eprintln!("Database Error: {:?}", e);
-            AppError::InternalServerError("ไม่สามารถสร้าง Property Option ใหม่ได้".to_string())
+            AppError::InternalServerError("Unable to create new Property Option".to_string())
         })
     }
 
@@ -218,7 +218,7 @@ impl PropertyService {
         PropertyRepository::update_property_is_active(conn, property_option_id, is_active)
             .map_err(|e| {
                 eprintln!("Database Error: {:?}", e);
-                AppError::InternalServerError("ไม่สามารถอัปเดต Property Option ได้".to_string())
+                AppError::InternalServerError("Unable to update Property Option".to_string())
             })
     }
 
@@ -239,8 +239,8 @@ impl PropertyService {
 
         PropertyRepository::update_property_option(conn, id, changeset)
             .map_err(map_diesel_error(
-                "ไม่พบ Property Option ที่ระบุ",
-                "ไม่สามารถอัปเดต Property Option ได้",
+                "Specified Property Option not found",
+                "Unable to update Property Option",
             ))
     }
 
@@ -250,11 +250,11 @@ impl PropertyService {
     ) -> Result<(), AppError> {
         let updated_rows = PropertyRepository::delete_property_option(conn, property_option_id)
             .map_err(|_| {
-                AppError::InternalServerError("ไม่สามารถลบ Property Option ได้".to_string())
+                AppError::InternalServerError("Unable to delete Property Option".to_string())
             })?;
 
         if updated_rows == 0 {
-            return Err(AppError::BadRequest("ไม่พบ Property Option ที่ต้องการลบ".to_string()));
+            return Err(AppError::BadRequest("Property Option to delete not found".to_string()));
         }
 
         Ok(())

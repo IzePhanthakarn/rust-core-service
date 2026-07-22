@@ -27,9 +27,9 @@ use crate::{
     tag = "Auth",
     request_body = RegisterRequest,
     responses(
-        (status = 201, description = "สมัครสมาชิกสำเร็จ", body = ApiResponse<RegisterResponse>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง (Validation Error)", body = ApiResponse<EmptyData>),
-        (status = 409, description = "อีเมลนี้ถูกใช้งานแล้ว", body = ApiResponse<EmptyData>)
+        (status = 201, description = "Registration successful", body = ApiResponse<RegisterResponse>),
+        (status = 400, description = "Invalid data (validation error)", body = ApiResponse<EmptyData>),
+        (status = 409, description = "This email is already in use", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn register(
@@ -42,7 +42,7 @@ pub async fn register(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success_without_data(201, "สมัครสมาชิกสำเร็จ")),
+        Json(ApiResponse::success_without_data(201, "Registration successful")),
     ))
 }
 
@@ -52,8 +52,8 @@ pub async fn register(
     tag = "Auth",
     request_body = LoginRequest,
     responses(
-        (status = 200, description = "เข้าสู่ระบบสำเร็จ", body = ApiResponse<AuthResponse>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง / โดนแบน", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Login successful", body = ApiResponse<AuthResponse>),
+        (status = 400, description = "Invalid data / account banned", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn login(
@@ -64,7 +64,7 @@ pub async fn login(
 
     let response_data = AuthService::login(&mut conn, payload)?;
 
-    Ok(Json(ApiResponse::success(200, "เข้าสู่ระบบสำเร็จ", response_data)))
+    Ok(Json(ApiResponse::success(200, "Login successful", response_data)))
 }
 
 #[utoipa::path(
@@ -73,9 +73,9 @@ pub async fn login(
     tag = "Auth",
     request_body = RefreshRequest,
     responses(
-        (status = 200, description = "ต่ออายุ Token สำเร็จ", body = ApiResponse<AuthResponse>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง", body = ApiResponse<EmptyData>),
-        (status = 401, description = "Token ไม่ถูกต้องหรือถูกยกเลิก", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Token refreshed successfully", body = ApiResponse<AuthResponse>),
+        (status = 400, description = "Invalid data", body = ApiResponse<EmptyData>),
+        (status = 401, description = "Invalid or revoked token", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn refresh_token(
@@ -86,7 +86,7 @@ pub async fn refresh_token(
 
     let response_data = AuthService::refresh(&mut conn, payload)?;
 
-    Ok(Json(ApiResponse::success(200, "ต่ออายุ Token สำเร็จ", response_data)))
+    Ok(Json(ApiResponse::success(200, "Token refreshed successfully", response_data)))
 }
 
 #[utoipa::path(
@@ -95,8 +95,8 @@ pub async fn refresh_token(
     tag = "Auth",
     request_body = ResetPasswordRequest,
     responses(
-        (status = 200, description = "เปลี่ยนรหัสผ่านสำเร็จ", body = ApiResponse<EmptyData>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Password changed successfully", body = ApiResponse<EmptyData>),
+        (status = 400, description = "Invalid data", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn reset_password(
@@ -109,7 +109,7 @@ pub async fn reset_password(
 
     Ok(Json(ApiResponse::success_without_data(
         200,
-        "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่",
+        "Password changed successfully, please log in again",
     )))
 }
 
@@ -119,8 +119,8 @@ pub async fn reset_password(
     tag = "Auth",
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ออกจากระบบสำเร็จ", body = ApiResponse<EmptyData>),
-        (status = 401, description = "ยังไม่ได้เข้าสู่ระบบ หรือ Token หมดอายุ", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Logout successful", body = ApiResponse<EmptyData>),
+        (status = 401, description = "Not logged in or token expired", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn logout(
@@ -131,7 +131,7 @@ pub async fn logout(
 
     AuthService::logout(&mut conn, claims.sub)?;
 
-    Ok(Json(ApiResponse::success_without_data(200, "ออกจากระบบทุกอุปกรณ์สำเร็จ")))
+    Ok(Json(ApiResponse::success_without_data(200, "Logged out from all devices successfully")))
 }
 
 #[utoipa::path(
@@ -141,9 +141,9 @@ pub async fn logout(
     request_body = ChangePasswordRequest,
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "เปลี่ยนรหัสผ่านสำเร็จ", body = ApiResponse<EmptyData>),
-        (status = 400, description = "รหัสผ่านเดิมไม่ถูกต้อง", body = ApiResponse<EmptyData>),
-        (status = 401, description = "ยังไม่ได้เข้าสู่ระบบ", body = ApiResponse<EmptyData>)
+        (status = 200, description = "Password changed successfully", body = ApiResponse<EmptyData>),
+        (status = 400, description = "Old password is incorrect", body = ApiResponse<EmptyData>),
+        (status = 401, description = "Not logged in", body = ApiResponse<EmptyData>)
     )
 )]
 pub async fn change_password(
@@ -157,6 +157,6 @@ pub async fn change_password(
 
     Ok(Json(ApiResponse::success_without_data(
         200,
-        "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านใหม่",
+        "Password changed successfully, please log in again with your new password",
     )))
 }

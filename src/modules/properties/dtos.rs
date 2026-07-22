@@ -8,9 +8,9 @@ use crate::schema::{property_options, property_types};
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreatePropertyTypeRequest {
-    #[validate(length(min = 1, message = "กรุณาระบุชื่อ Property Type ที่ต้องการสร้าง"))]
+    #[validate(length(min = 1, message = "Please provide the name of the Property Type to create"))]
     pub name: String,
-    #[validate(length(min = 1, message = "กรุณาระบุ Code ของ Property Type ที่ต้องการสร้าง"))]
+    #[validate(length(min = 1, message = "Please provide the Code of the Property Type to create"))]
     pub code: String,
     pub description: Option<String>,
 }
@@ -18,18 +18,18 @@ pub struct CreatePropertyTypeRequest {
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdatePropertyTypeRequest {
     pub id: Uuid,
-    #[validate(length(min = 1, message = "กรุณาระบุชื่อ Property Type ที่ต้องการแก้ไข"))]
+    #[validate(length(min = 1, message = "Please provide the name of the Property Type to update"))]
     pub name: String,
-    #[validate(length(min = 1, message = "กรุณาระบุ Code ของ Property Type ที่ต้องการแก้ไข"))]
+    #[validate(length(min = 1, message = "Please provide the Code of the Property Type to update"))]
     pub code: String,
     pub description: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreatePropertyOptionRequest {
-    #[validate(length(min = 1, message = "กรุณาระบุชื่อ Property Option ที่ต้องการสร้าง"))]
+    #[validate(length(min = 1, message = "Please provide the name of the Property Option to create"))]
     pub label: String,
-    #[validate(length(min = 1, message = "กรุณาระบุ Value ของ Property Option ที่ต้องการสร้าง"))]
+    #[validate(length(min = 1, message = "Please provide the Value of the Property Option to create"))]
     pub value: String,
     pub property_type_id: Uuid,
 }
@@ -89,9 +89,9 @@ impl PropertyResponse {
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdatePropertyOptionRequest {
     pub id: Uuid,
-    #[validate(length(min = 1, message = "กรุณาระบุ Label ของ Property Option ที่ต้องการแก้ไข"))]
+    #[validate(length(min = 1, message = "Please provide the Label of the Property Option to update"))]
     pub label: String,
-    #[validate(length(min = 1, message = "กรุณาระบุ Value ของ Property Option ที่ต้องการแก้ไข"))]
+    #[validate(length(min = 1, message = "Please provide the Value of the Property Option to update"))]
     pub value: String,
     pub sort_order: i32,
     pub is_active: bool,

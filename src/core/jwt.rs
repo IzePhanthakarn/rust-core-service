@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use uuid::Uuid;
 
-// โครงสร้างของข้อมูลที่จะฝังไปใน JWT (Payload)
+// Structure of the data embedded in the JWT (payload)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: Uuid,          // User ID
-    pub exp: usize,         // เวลาหมดอายุ (Timestamp)
-    pub iat: usize,         // เวลาที่สร้าง Token (Timestamp)
-    pub token_version: i32, // สำหรับทำ Force Logout
-    pub role: String,       // Role ของ User
-    pub token_type: String, // แยกประเภท Access / Refresh
+    pub exp: usize,         // Expiration time (timestamp)
+    pub iat: usize,         // Token creation time (timestamp)
+    pub token_version: i32, // For forced logout
+    pub role: String,       // User role
+    pub token_type: String, // Distinguishes access / refresh
 }
 
 impl Claims {
@@ -25,7 +25,7 @@ impl Claims {
     }
 }
 
-// ฟังก์ชันสร้างทั้ง Access และ Refresh Token คืนค่าเป็น Tuple (access, refresh)
+// Function that generates both the access and refresh tokens, returned as a tuple (access, refresh)
 pub fn generate_tokens(
     user_id: Uuid,
     token_version: i32,
@@ -33,7 +33,7 @@ pub fn generate_tokens(
 ) -> Result<(String, String), jsonwebtoken::errors::Error> {
     let now = Utc::now();
 
-    // 1. สร้าง Access Token (อายุ 1 วัน)
+    // 1. Create the access token (valid for 1 day)
     let access_exp = now + Duration::days(1);
     let access_claims = Claims {
         sub: user_id,
@@ -51,7 +51,7 @@ pub fn generate_tokens(
         &EncodingKey::from_secret(access_secret.as_bytes()),
     )?;
 
-    // 2. สร้าง Refresh Token (อายุ 7 วัน)
+    // 2. Create the refresh token (valid for 7 days)
     let refresh_exp = now + Duration::days(7);
     let refresh_claims = Claims {
         sub: user_id,
@@ -82,7 +82,7 @@ pub fn verify_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> 
     Ok(token_data.claims)
 }
 
-// === 2. เพิ่มฟังก์ชันสำหรับตรวจสอบ Refresh Token โดยเฉพาะ ===
+// === 2. Add a function specifically for verifying the refresh token ===
 pub fn verify_refresh_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let secret = env::var("JWT_REFRESH_SECRET").expect("JWT_REFRESH_SECRET must be set");
     let token_data = decode::<Claims>(

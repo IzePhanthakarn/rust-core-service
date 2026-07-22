@@ -45,7 +45,7 @@ impl TodoService {
         Ok(TodoRepository::to_list_response(saved_list, Vec::new()))
     }
 
-    /// นำ list ที่เลือกขึ้นไปอยู่บนสุด (position 0) แล้วเลื่อน list อื่นลงตามลำดับเดิม
+    /// Moves the selected list to the top (position 0) and shifts the other lists down, preserving their original order.
     pub fn move_todo_list_to_top(
         conn: &mut PgConnection,
         list_id: Uuid,
@@ -54,7 +54,7 @@ impl TodoService {
         Self::find_owned_list(conn, list_id, user_id)?;
 
         conn.transaction::<(), AppError, _>(|conn| {
-            // เรียง list ปัจจุบันตาม position แล้วดึง target ขึ้นมาไว้หัวแถว
+            // Sort the current lists by position, then move the target list to the front
             let mut ordered_ids: Vec<Uuid> = TodoRepository::find_lists_by_user(conn, user_id)?
                 .into_iter()
                 .map(|list| list.id)
@@ -138,19 +138,19 @@ impl TodoService {
     ) -> Result<Vec<TodoItemResponse>, AppError> {
         Self::find_owned_list(conn, list_id, user_id)?;
 
-        // ป้องกัน id ซ้ำใน payload
+        // Prevent duplicate ids in the payload
         let unique_ids: HashSet<Uuid> = payload.item_ids.iter().copied().collect();
         if unique_ids.len() != payload.item_ids.len() {
-            return Err(AppError::BadRequest("มี item id ซ้ำกันใน request".to_string()));
+            return Err(AppError::BadRequest("The request contains duplicate item ids.".to_string()));
         }
 
         let existing_items = TodoRepository::find_items_by_list(conn, list_id)?;
         let existing_ids: HashSet<Uuid> = existing_items.iter().map(|item| item.id).collect();
 
-        // payload ต้องอ้างถึง item ทั้งหมดใน list นี้แบบครบถ้วน ไม่ขาดไม่เกิน
+        // The payload must reference exactly all items in this list, no more and no fewer
         if unique_ids != existing_ids {
             return Err(AppError::BadRequest(
-                "รายการ item ที่ส่งมาไม่ตรงกับ item ทั้งหมดใน list นี้".to_string(),
+                "The submitted item list does not match all items in this list.".to_string(),
             ));
         }
 
@@ -200,7 +200,7 @@ impl TodoService {
             .map_err(|_| AppError::NotFound("Todo list not found".to_string()))?;
 
         if list.user_id != user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึง Todo list นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to access this Todo list.".to_string()));
         }
 
         Ok(list)

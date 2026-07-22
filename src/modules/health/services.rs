@@ -19,7 +19,7 @@ impl HealthService {
         pool: &DbPool,
         start_time: Instant,
     ) -> Result<HealthData, AppError> {
-        // ข้อมูล Database
+        // Database information
         let pool_state = pool.state();
         let total = pool_state.connections;
         let idle = pool_state.idle_connections;

@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # 1. Job ตรวจสอบและสแกนโค้ด (เปลี่ยนชื่อจาก lint)
+  # 1. Job to check and scan the code (renamed from lint)
   code-quality:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +26,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PQ_LIB_DIR: /usr/lib/x86_64-linux-gnu
 
-  # 2. Job สำหรับ Build และ Push Container Image
+  # 2. Job for building and pushing the container image
   build-and-push:
     needs: code-quality
     runs-on: ubuntu-latest
@@ -50,7 +50,7 @@ jobs:
           docker build -t $IMAGE_TAG .
           docker push $IMAGE_TAG
 
-  # 3. Job สำหรับการทำ Database Migration ก่อนเริ่มใช้โค้ดจริง
+  # 3. Job for running the database migration before the code goes live
   migration:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
       - name: Setup GCloud CLI
         uses: google-github-actions/setup-gcloud@v2
 
-      # สั่งให้ Cloud Run Job ไปเปิดคอนเทนเนอร์ตัวใหม่รันคำสั่ง Migration
+      # Tell the Cloud Run Job to spin up a new container and run the migration command
       - name: Run Database Migration
         run: |
           gcloud run jobs execute rust-migration-job \
@@ -71,7 +71,7 @@ jobs:
             --image asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/rust-apps/core-api:${{ github.sha }} \
             --wait
 
-  # 4. Job ด่านสุดท้าย สั่งอัปเดตระบบจริงบน Cloud Run
+  # 4. Final stage job, updates the live system on Cloud Run
   deploy:
     needs: migration
     runs-on: ubuntu-latest

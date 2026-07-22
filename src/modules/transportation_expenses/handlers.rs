@@ -39,7 +39,7 @@ pub async fn get_all_transportation_expenses(
         &mut conn, claims.sub, filters,
     )?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -65,7 +65,7 @@ pub async fn create_transportation_expense(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้างรายการค่าเดินทางสำเร็จ", result)),
+        Json(ApiResponse::success(201, "Transportation expense created successfully", result)),
     ))
 }
 
@@ -95,7 +95,7 @@ pub async fn update_transportation_expense(
         expense_id,
     )?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "แก้ไขรายการค่าเดินทางสำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Transportation expense updated successfully", result))))
 }
 
 #[utoipa::path(
@@ -117,5 +117,5 @@ pub async fn delete_transportation_expense(
     let mut conn = state.get_conn()?;
     TransportationExpenseService::delete_transportation_expense(&mut conn, expense_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบรายการค่าเดินทางสำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Transportation expense deleted successfully"))))
 }

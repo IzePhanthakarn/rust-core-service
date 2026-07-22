@@ -38,7 +38,7 @@ pub async fn get_all_transactions(
     let mut conn = state.get_conn()?;
     let data = TransactionService::get_all_transactions(&mut conn, claims.sub, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -60,7 +60,7 @@ pub async fn get_one_transaction(
     let mut conn = state.get_conn()?;
     let transaction = TransactionService::find_one_transaction(&mut conn, transaction_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", transaction))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Data retrieved successfully", transaction))))
 }
 
 #[utoipa::path(
@@ -84,7 +84,7 @@ pub async fn create_transaction(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Transaction สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Transaction created successfully", result)),
     ))
 }
 
@@ -110,7 +110,7 @@ pub async fn update_transaction(
     let result =
         TransactionService::update_transaction(&mut conn, &payload, claims.sub, transaction_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "แก้ไข Transaction สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Transaction updated successfully", result))))
 }
 
 #[utoipa::path(
@@ -132,7 +132,7 @@ pub async fn delete_transaction(
     let mut conn = state.get_conn()?;
     TransactionService::delete_transaction(&mut conn, transaction_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Transaction สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Transaction deleted successfully"))))
 }
 
 #[utoipa::path(
@@ -154,7 +154,7 @@ pub async fn get_all_subscriptions(
     let mut conn = state.get_conn()?;
     let data = TransactionService::get_all_subscriptions(&mut conn, claims.sub, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -165,7 +165,7 @@ pub async fn get_all_subscriptions(
     security(("bearerAuth" = [])),
     responses(
         (status = 201, description = "Subscription created successfully", body = ApiResponse<SubscriptionResponse>),
-        (status = 400, description = "billing_month ไม่สอดคล้องกับ billing_cycle"),
+        (status = 400, description = "billing_month is not consistent with billing_cycle"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -179,7 +179,7 @@ pub async fn create_subscription(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Subscription สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Subscription created successfully", result)),
     ))
 }
 
@@ -205,7 +205,7 @@ pub async fn update_subscription(
     let result =
         TransactionService::update_subscription(&mut conn, &payload, claims.sub, subscription_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "แก้ไข Subscription สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Subscription updated successfully", result))))
 }
 
 #[utoipa::path(
@@ -227,7 +227,7 @@ pub async fn toggle_subscription(
     let mut conn = state.get_conn()?;
     let result = TransactionService::toggle_subscription(&mut conn, subscription_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "เปลี่ยนสถานะ Subscription สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Subscription status changed successfully", result))))
 }
 
 #[utoipa::path(
@@ -249,5 +249,5 @@ pub async fn delete_subscription(
     let mut conn = state.get_conn()?;
     TransactionService::delete_subscription(&mut conn, subscription_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Subscription สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Subscription deleted successfully"))))
 }

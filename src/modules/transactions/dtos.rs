@@ -62,8 +62,8 @@ pub struct TransactionFilterQuery {
 pub struct CreateTransactionRequest {
     #[serde(rename = "type")]
     pub type_: TransactionType,
-    /// จำนวนเงินหน่วยสตางค์ (100.50 บาท = 10050)
-    #[validate(range(min = 1, message = "จำนวนเงินต้องมากกว่า 0"))]
+    /// Amount in satang (100.50 baht = 10050)
+    #[validate(range(min = 1, message = "Amount must be greater than 0"))]
     pub amount: i64,
     #[validate(custom(function = "validate_category"))]
     pub category: String,
@@ -78,8 +78,8 @@ pub struct CreateTransactionRequest {
 pub struct UpdateTransactionRequest {
     #[serde(rename = "type")]
     pub type_: TransactionType,
-    /// จำนวนเงินหน่วยสตางค์ (100.50 บาท = 10050)
-    #[validate(range(min = 1, message = "จำนวนเงินต้องมากกว่า 0"))]
+    /// Amount in satang (100.50 baht = 10050)
+    #[validate(range(min = 1, message = "Amount must be greater than 0"))]
     pub amount: i64,
     #[validate(custom(function = "validate_category"))]
     pub category: String,
@@ -96,7 +96,7 @@ pub struct UpdateTransactionRequest {
 pub struct SubscriptionFilterQuery {
     pub billing_cycle: Option<BillingCycle>,
     pub is_active: Option<bool>,
-    /// ค้นหาจากชื่อ subscription แบบ contains (ไม่สนตัวพิมพ์เล็กใหญ่)
+    /// Search by subscription name using contains matching (case-insensitive)
     pub keyword: Option<String>,
 }
 
@@ -104,14 +104,14 @@ pub struct SubscriptionFilterQuery {
 pub struct CreateSubscriptionRequest {
     #[validate(custom(function = "validate_name"))]
     pub name: String,
-    /// จำนวนเงินหน่วยสตางค์ (100.50 บาท = 10050)
-    #[validate(range(min = 1, message = "จำนวนเงินต้องมากกว่า 0"))]
+    /// Amount in satang (100.50 baht = 10050)
+    #[validate(range(min = 1, message = "Amount must be greater than 0"))]
     pub amount: i64,
     pub billing_cycle: BillingCycle,
-    #[validate(range(min = 1, max = 31, message = "วันที่ตัดเงินต้องอยู่ระหว่าง 1-31"))]
+    #[validate(range(min = 1, max = 31, message = "Billing day must be between 1 and 31"))]
     pub billing_day: i32,
-    /// เดือนที่ตัดเงิน (1-12) ใช้เฉพาะ billing_cycle = yearly
-    #[validate(range(min = 1, max = 12, message = "เดือนที่ตัดเงินต้องอยู่ระหว่าง 1-12"))]
+    /// Billing month (1-12), used only when billing_cycle = yearly
+    #[validate(range(min = 1, max = 12, message = "Billing month must be between 1 and 12"))]
     pub billing_month: Option<i32>,
     #[validate(custom(function = "validate_category"))]
     pub category: Option<String>,
@@ -125,14 +125,14 @@ pub struct CreateSubscriptionRequest {
 pub struct UpdateSubscriptionRequest {
     #[validate(custom(function = "validate_name"))]
     pub name: String,
-    /// จำนวนเงินหน่วยสตางค์ (100.50 บาท = 10050)
-    #[validate(range(min = 1, message = "จำนวนเงินต้องมากกว่า 0"))]
+    /// Amount in satang (100.50 baht = 10050)
+    #[validate(range(min = 1, message = "Amount must be greater than 0"))]
     pub amount: i64,
     pub billing_cycle: BillingCycle,
-    #[validate(range(min = 1, max = 31, message = "วันที่ตัดเงินต้องอยู่ระหว่าง 1-31"))]
+    #[validate(range(min = 1, max = 31, message = "Billing day must be between 1 and 31"))]
     pub billing_day: i32,
-    /// เดือนที่ตัดเงิน (1-12) ใช้เฉพาะ billing_cycle = yearly
-    #[validate(range(min = 1, max = 12, message = "เดือนที่ตัดเงินต้องอยู่ระหว่าง 1-12"))]
+    /// Billing month (1-12), used only when billing_cycle = yearly
+    #[validate(range(min = 1, max = 12, message = "Billing month must be between 1 and 12"))]
     pub billing_month: Option<i32>,
     #[validate(custom(function = "validate_category"))]
     pub category: Option<String>,
@@ -159,8 +159,8 @@ pub struct TransactionResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-/// รายการ transaction แบบแบ่งหน้า พร้อมสถิติสรุป
-/// (stats คำนวณจากช่วงเดือน/ปีที่ระบุ ไม่ผูกกับ filter type/category/keyword และไม่ผูกกับ pagination)
+/// Paginated list of transactions with summary statistics
+/// (stats are calculated from the specified month/year range, independent of the type/category/keyword filters and pagination)
 #[derive(Serialize, ToSchema)]
 pub struct TransactionListResponse {
     pub items: Vec<TransactionResponse>,
@@ -170,22 +170,22 @@ pub struct TransactionListResponse {
     pub stats: TransactionStatsResponse,
 }
 
-/// สรุปสถิติของ transaction (หน่วยเป็นสตางค์)
+/// Summary statistics for transactions (in satang)
 #[derive(Serialize, ToSchema)]
 pub struct TransactionStatsResponse {
-    /// รายรับรวม
+    /// Total income
     pub total_income: i64,
-    /// รายจ่ายรวม
+    /// Total expense
     pub total_expense: i64,
-    /// หมวดหมู่รายจ่ายสูงสุด เรียงจากมากไปน้อย
+    /// Top expense categories, sorted from highest to lowest
     pub top_expense_category: Vec<TransactionCategoryStat>,
-    /// ค่าใช้จ่ายเฉลี่ยต่อวัน (รายจ่ายรวม / จำนวนวันในช่วง)
+    /// Average daily expense (total expense / number of days in range)
     pub average_daily_expense: i64,
-    /// จำนวนรายการทั้งหมดในช่วงที่คำนวณ (ไม่ใช่แค่หน้าปัจจุบัน)
+    /// Total number of items in the calculated range (not just the current page)
     pub transaction_count: i64,
 }
 
-/// ยอดรายจ่ายรวมของแต่ละหมวด
+/// Total expense amount for each category
 #[derive(Serialize, ToSchema)]
 pub struct TransactionCategoryStat {
     pub category: String,
@@ -211,45 +211,45 @@ pub struct SubscriptionResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-/// รายการ subscription พร้อมสถิติสรุป (stats คำนวณจากรายการที่ active ทั้งหมด ไม่ผูกกับ filter)
+/// List of subscriptions with summary statistics (stats are calculated from all active items, independent of the filter)
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionListResponse {
     pub items: Vec<SubscriptionResponse>,
     pub stats: SubscriptionStatsResponse,
 }
 
-/// สรุปสถิติของ subscription (จำนวนเงินหน่วยสตางค์)
+/// Summary statistics for subscriptions (amount in satang)
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionStatsResponse {
-    /// ค่าใช้จ่ายรวมต่อเดือน (รายเดือน + รายปีหาร 12) เฉพาะรายการ active
+    /// Total monthly expense (monthly items + yearly items divided by 12), active items only
     pub monthly_recurring: i64,
-    /// ประมาณการค่าใช้จ่ายรวมต่อปี (รายเดือนคูณ 12 + รายปี) เฉพาะรายการ active
+    /// Estimated total yearly expense (monthly items times 12 + yearly items), active items only
     pub yearly_estimate: i64,
-    /// จำนวนรายการที่ active
+    /// Number of active items
     pub active_count: i64,
-    /// จำนวนรายการทั้งหมด (รวม inactive)
+    /// Total number of items (including inactive)
     pub total_count: i64,
-    /// รายการที่ครบกำหนดตัดเงินในเดือนนี้แต่ยังไม่ถึงวันตัด (ยังไม่จ่าย)
+    /// Items due for billing this month but not yet billed (not yet paid)
     pub remaining_this_month: SubscriptionMonthlyStat,
-    /// รายการที่ถึงวันตัดเงินของเดือนนี้ไปแล้ว (จ่ายแล้ว)
+    /// Items whose billing date this month has already passed (already paid)
     pub passed_this_month: SubscriptionMonthlyStat,
-    /// ยอดรายเดือน (normalize) แยกตามหมวด เรียงมากไปน้อย เฉพาะรายการ active
+    /// Monthly amount (normalized) broken down by category, sorted from highest to lowest, active items only
     pub category_breakdown: Vec<SubscriptionCategoryStat>,
-    /// สัดส่วนจำนวนรายการตามรอบบิล เฉพาะรายการ active
+    /// Proportion of items by billing cycle, active items only
     pub cycle_split: SubscriptionCycleSplit,
-    /// รายการที่แพงที่สุด 4 อันดับ (คิดเป็นรายเดือน) เฉพาะรายการ active
+    /// Top 4 most expensive items (calculated monthly), active items only
     pub top_expenses: Vec<SubscriptionTopExpense>,
 }
 
-/// สรุปรายการที่ครบกำหนดตัดเงินในเดือนนี้ (ใช้ทั้งฝั่งจ่ายแล้วและยังไม่จ่าย)
+/// Summary of items due for billing this month (covers both paid and unpaid items)
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionMonthlyStat {
     pub count: i64,
-    /// ยอดเงินจริง (ไม่ normalize)
+    /// Actual amount (not normalized)
     pub amount: i64,
 }
 
-/// ยอดรายเดือน (normalize) ของแต่ละหมวด
+/// Monthly amount (normalized) for each category
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionCategoryStat {
     pub category: Option<String>,
@@ -257,14 +257,14 @@ pub struct SubscriptionCategoryStat {
     pub count: i64,
 }
 
-/// จำนวนรายการแยกตามรอบบิล
+/// Number of items broken down by billing cycle
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionCycleSplit {
     pub monthly_count: i64,
     pub yearly_count: i64,
 }
 
-/// รายการค่าใช้จ่ายสูงสุด (คิดเป็นรายเดือน)
+/// Most expensive items (calculated monthly)
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionTopExpense {
     pub name: String,

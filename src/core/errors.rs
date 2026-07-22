@@ -39,15 +39,15 @@ impl From<diesel::result::Error> for AppError {
     fn from(err: diesel::result::Error) -> Self {
         match err {
             diesel::result::Error::NotFound => {
-                AppError::NotFound("ข้อมูลที่ต้องการไม่พบในระบบ".to_string())
+                AppError::NotFound("The requested data was not found in the system".to_string())
             }
             diesel::result::Error::DatabaseError(
                 diesel::result::DatabaseErrorKind::UniqueViolation,
                 _,
-            ) => AppError::Conflict("ข้อมูลนี้มีอยู่แล้วในระบบ".to_string()),
+            ) => AppError::Conflict("This data already exists in the system".to_string()),
             _ => {
                 eprintln!("Database Error: {:?}", err);
-                AppError::InternalServerError("เกิดข้อผิดพลาดจากฐานข้อมูล".to_string())
+                AppError::InternalServerError("A database error occurred".to_string())
             }
         }
     }

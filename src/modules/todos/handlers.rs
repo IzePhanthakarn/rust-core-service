@@ -34,7 +34,7 @@ pub async fn get_all_todo_lists(
     let mut conn = state.get_conn()?;
     let data = TodoService::get_all_todo_lists(&mut conn, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -58,7 +58,7 @@ pub async fn create_todo_list(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Todo list สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Todo list created successfully", result)),
     ))
 }
 
@@ -82,7 +82,7 @@ pub async fn update_todo_list(
     let mut conn = state.get_conn()?;
     let result = TodoService::update_todo_list(&mut conn, &payload, claims.sub, list_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "แก้ไข Todo list สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Todo list updated successfully", result))))
 }
 
 #[utoipa::path(
@@ -103,7 +103,7 @@ pub async fn delete_todo_list(
     let mut conn = state.get_conn()?;
     TodoService::delete_todo_list(&mut conn, list_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Todo list สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Todo list deleted successfully"))))
 }
 
 #[utoipa::path(
@@ -124,7 +124,7 @@ pub async fn move_todo_list_to_top(
     let mut conn = state.get_conn()?;
     let result = TodoService::move_todo_list_to_top(&mut conn, list_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "นำ Todo list ขึ้นบนสุดสำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Todo list moved to top successfully", result))))
 }
 
 #[utoipa::path(
@@ -149,7 +149,7 @@ pub async fn create_todo_item(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Todo item สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Todo item created successfully", result)),
     ))
 }
 
@@ -173,7 +173,7 @@ pub async fn reorder_todo_items(
     let mut conn = state.get_conn()?;
     let result = TodoService::reorder_todo_items(&mut conn, &payload, claims.sub, list_id)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "จัดลำดับ Todo items สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Todo items reordered successfully", result))))
 }
 
 #[utoipa::path(
@@ -194,7 +194,7 @@ pub async fn toggle_todo_item(
     let mut conn = state.get_conn()?;
     let result = TodoService::toggle_todo_item(&mut conn, item_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success(200, "เปลี่ยนสถานะ Todo item สำเร็จ", result))))
+    Ok((StatusCode::OK, Json(ApiResponse::success(200, "Todo item status toggled successfully", result))))
 }
 
 #[utoipa::path(
@@ -215,5 +215,5 @@ pub async fn delete_todo_item(
     let mut conn = state.get_conn()?;
     TodoService::delete_todo_item(&mut conn, item_id, claims.sub)?;
 
-    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "ลบ Todo item สำเร็จ"))))
+    Ok((StatusCode::OK, Json(ApiResponse::success_without_data(200, "Todo item deleted successfully"))))
 }

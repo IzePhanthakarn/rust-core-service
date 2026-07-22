@@ -239,7 +239,7 @@ pub struct NewTaskComment<'a> {
 }
 
 // ===== Changesets (partial updates) =====
-// Option<Option<T>> สำหรับคอลัมน์ที่เป็น NULL ได้: outer None = ไม่แตะต้อง, inner None = set NULL
+// Option<Option<T>> for columns that can be NULL: outer None = leave untouched, inner None = set NULL
 
 #[derive(AsChangeset, Default)]
 #[diesel(table_name = tasks)]

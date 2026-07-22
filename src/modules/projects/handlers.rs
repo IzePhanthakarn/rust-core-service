@@ -39,7 +39,7 @@ pub async fn list_projects(
     let mut conn = state.get_conn()?;
     let data = ProjectService::list_projects(&mut conn, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลโปรเจกต์สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Projects retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -63,7 +63,7 @@ pub async fn create_project(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้างโปรเจกต์สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Project created successfully", result)),
     ))
 }
 
@@ -87,7 +87,7 @@ pub async fn get_project_detail(
 
     Ok(Json(ApiResponse::success(
         200,
-        "ดึงรายละเอียดโปรเจกต์สำเร็จ",
+        "Project details retrieved successfully",
         data,
     )))
 }
@@ -112,7 +112,7 @@ pub async fn update_project(
     let mut conn = state.get_conn()?;
     let result = ProjectService::update_project(&mut conn, &payload, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "แก้ไขโปรเจกต์สำเร็จ", result)))
+    Ok(Json(ApiResponse::success(200, "Project updated successfully", result)))
 }
 
 #[utoipa::path(
@@ -135,7 +135,7 @@ pub async fn delete_project(
 
     Ok(Json(ApiResponse::success_without_data(
         200,
-        "ลบโปรเจกต์สำเร็จ",
+        "Project deleted successfully",
     )))
 }
 
@@ -161,7 +161,7 @@ pub async fn list_members(
     let mut conn = state.get_conn()?;
     let data = ProjectService::list_members(&mut conn, id, claims.sub, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงรายชื่อสมาชิกโปรเจกต์สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Project members retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -187,7 +187,7 @@ pub async fn add_member(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "เพิ่มสมาชิกโปรเจกต์สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Project member added successfully", result)),
     ))
 }
 
@@ -212,7 +212,7 @@ pub async fn remove_member(
 
     Ok(Json(ApiResponse::success_without_data(
         200,
-        "ลบสมาชิกออกจากโปรเจกต์สำเร็จ",
+        "Member removed from project successfully",
     )))
 }
 
@@ -235,7 +235,7 @@ pub async fn get_notes(
     let mut conn = state.get_conn()?;
     let data = ProjectService::get_notes_tree(&mut conn, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงโครงสร้างโน้ตสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Notes structure retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -259,7 +259,7 @@ pub async fn create_note(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้างโน้ตสำเร็จ", result)),
+        Json(ApiResponse::success(201, "Note created successfully", result)),
     ))
 }
 
@@ -282,7 +282,7 @@ pub async fn update_note(
     let mut conn = state.get_conn()?;
     let result = ProjectService::update_note(&mut conn, &payload, id, note_id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "แก้ไขโน้ตสำเร็จ", result)))
+    Ok(Json(ApiResponse::success(200, "Note updated successfully", result)))
 }
 
 #[utoipa::path(
@@ -302,7 +302,7 @@ pub async fn delete_note(
     let mut conn = state.get_conn()?;
     ProjectService::delete_note(&mut conn, id, note_id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success_without_data(200, "ลบโน้ตสำเร็จ")))
+    Ok(Json(ApiResponse::success_without_data(200, "Note deleted successfully")))
 }
 
 // ===== Boards, Kanban & Backlogs =====
@@ -324,7 +324,7 @@ pub async fn get_boards(
     let mut conn = state.get_conn()?;
     let data = ProjectService::get_boards(&mut conn, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลบอร์ดสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Board data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -344,7 +344,7 @@ pub async fn get_kanban(
     let mut conn = state.get_conn()?;
     let data = ProjectService::get_kanban(&mut conn, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูล Kanban สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Kanban data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -366,7 +366,7 @@ pub async fn get_backlogs(
 
     Ok(Json(ApiResponse::success(
         200,
-        "ดึงข้อมูล Backlogs สำเร็จ",
+        "Backlogs data retrieved successfully",
         data,
     )))
 }
@@ -390,7 +390,7 @@ pub async fn list_sprints(
     let mut conn = state.get_conn()?;
     let data = ProjectService::list_sprints(&mut conn, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลสปรินต์สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Sprints retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -412,7 +412,7 @@ pub async fn get_sprint_tasks(
 
     Ok(Json(ApiResponse::success(
         200,
-        "ดึงข้อมูลงานในสปรินต์สำเร็จ",
+        "Sprint tasks retrieved successfully",
         data,
     )))
 }
@@ -438,7 +438,7 @@ pub async fn create_sprint(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้างสปรินต์สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Sprint created successfully", result)),
     ))
 }
 
@@ -461,7 +461,7 @@ pub async fn update_sprint(
     let mut conn = state.get_conn()?;
     let result = ProjectService::update_sprint(&mut conn, &payload, id, sprint_id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "แก้ไขสปรินต์สำเร็จ", result)))
+    Ok(Json(ApiResponse::success(200, "Sprint updated successfully", result)))
 }
 
 #[utoipa::path(
@@ -481,7 +481,7 @@ pub async fn delete_sprint(
     let mut conn = state.get_conn()?;
     ProjectService::delete_sprint(&mut conn, id, sprint_id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success_without_data(200, "ลบสปรินต์สำเร็จ")))
+    Ok(Json(ApiResponse::success_without_data(200, "Sprint deleted successfully")))
 }
 
 // ===== Tasks =====
@@ -506,7 +506,7 @@ pub async fn create_task(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "สร้าง Task สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Task created successfully", result)),
     ))
 }
 
@@ -529,7 +529,7 @@ pub async fn update_task(
     let mut conn = state.get_conn()?;
     let result = ProjectService::update_task(&mut conn, &payload, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "อัปเดต Task สำเร็จ", result)))
+    Ok(Json(ApiResponse::success(200, "Task updated successfully", result)))
 }
 
 #[utoipa::path(
@@ -551,7 +551,7 @@ pub async fn delete_task(
 
     Ok(Json(ApiResponse::success_without_data(
         200,
-        "ลบ Task สำเร็จ",
+        "Task deleted successfully",
     )))
 }
 
@@ -574,7 +574,7 @@ pub async fn list_comments(
     let mut conn = state.get_conn()?;
     let data = ProjectService::list_comments(&mut conn, id, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงคอมเมนต์สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Comments retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -598,6 +598,6 @@ pub async fn create_comment(
 
     Ok((
         StatusCode::CREATED,
-        Json(ApiResponse::success(201, "เพิ่มคอมเมนต์สำเร็จ", result)),
+        Json(ApiResponse::success(201, "Comment added successfully", result)),
     ))
 }

@@ -27,7 +27,7 @@ use crate::{
     modules::users::repositories::UserRepository,
 };
 
-/// คอลัมน์ Kanban เริ่มต้น 4 คอลัมน์ (เรียงซ้าย -> ขวา)
+/// 4 default Kanban columns (ordered left -> right)
 const DEFAULT_COLUMNS: [(&str, i32); 4] = [
     ("Todo", 1),
     ("In progress", 2),
@@ -61,9 +61,9 @@ impl ProjectService {
             .collect())
     }
 
-    /// สร้างโปรเจกต์ใหม่ภายใต้ Transaction เดียว:
+    /// Creates a new project within a single transaction:
     /// projects -> project_members(owner) -> boards -> board_columns(4) -> sprints("Sprint 1")
-    /// ถ้าพังจุดใดจุดหนึ่ง Rollback ทั้งหมด
+    /// If any step fails, roll back everything
     pub fn create_project(
         conn: &mut PgConnection,
         payload: &CreateProjectRequest,
@@ -82,7 +82,7 @@ impl ProjectService {
             };
             let project = ProjectRepository::insert_project(conn, &new_project)?;
 
-            // เจ้าของเป็นสมาชิกคนแรก
+            // The owner is the first member
             ProjectRepository::insert_member(
                 conn,
                 &NewProjectMember {
@@ -91,7 +91,7 @@ impl ProjectService {
                 },
             )?;
 
-            // บอร์ดตั้งชื่อตามชื่อโปรเจกต์
+            // The board is named after the project
             let board = ProjectRepository::insert_board(
                 conn,
                 &NewBoard {
@@ -100,7 +100,7 @@ impl ProjectService {
                 },
             )?;
 
-            // 4 คอลัมน์เริ่มต้น
+            // 4 default columns
             let new_columns: Vec<NewBoardColumn<'_>> = DEFAULT_COLUMNS
                 .iter()
                 .map(|&(name, order_index)| NewBoardColumn {
@@ -111,7 +111,7 @@ impl ProjectService {
                 .collect();
             ProjectRepository::insert_columns(conn, &new_columns)?;
 
-            // Sprint 1 (เริ่มวันนี้ ไม่มีวันสิ้นสุด)
+            // Sprint 1 (starts today, no end date)
             ProjectRepository::insert_sprint(
                 conn,
                 &NewSprint {
@@ -212,17 +212,17 @@ impl ProjectService {
 
         let member = UserRepository::find_by_email(conn, email.trim())
             .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?
-            .ok_or_else(|| AppError::NotFound("ไม่พบผู้ใช้งานจากอีเมลนี้".to_string()))?;
+            .ok_or_else(|| AppError::NotFound("No user found with this email".to_string()))?;
 
         if member.deleted_at.is_some() {
-            return Err(AppError::NotFound("ไม่พบผู้ใช้งานจากอีเมลนี้".to_string()));
+            return Err(AppError::NotFound("No user found with this email".to_string()));
         }
 
         let is_member = ProjectRepository::is_member(conn, project_id, member.id)
             .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
         if is_member {
             return Err(AppError::BadRequest(
-                "ผู้ใช้งานนี้เป็นสมาชิกของโปรเจกต์อยู่แล้ว".to_string(),
+                "This user is already a member of the project".to_string(),
             ));
         }
 
@@ -240,7 +240,7 @@ impl ProjectService {
             .into_iter()
             .find(|(member_id, _, _, _, _)| *member_id == member.id)
             .map(to_member_response)
-            .ok_or_else(|| AppError::InternalServerError("ไม่พบสมาชิกที่เพิ่มใหม่".to_string()))
+            .ok_or_else(|| AppError::InternalServerError("Newly added member not found".to_string()))
     }
 
     pub fn remove_member(
@@ -253,13 +253,13 @@ impl ProjectService {
 
         if project.owner_id == member_id {
             return Err(AppError::BadRequest(
-                "ไม่สามารถลบเจ้าของโปรเจกต์ออกจากสมาชิกได้".to_string(),
+                "Cannot remove the project owner from the members".to_string(),
             ));
         }
 
         let deleted = ProjectRepository::delete_member(conn, project_id, member_id)?;
         if deleted == 0 {
-            return Err(AppError::NotFound("ไม่พบสมาชิกในโปรเจกต์นี้".to_string()));
+            return Err(AppError::NotFound("Member not found in this project".to_string()));
         }
 
         Ok(())
@@ -289,21 +289,21 @@ impl ProjectService {
 
         if let Some(parent_id) = payload.parent_id {
             let parent = ProjectRepository::find_note(conn, parent_id)
-                .map_err(|_| AppError::NotFound("ไม่พบโฟลเดอร์ปลายทาง".to_string()))?;
+                .map_err(|_| AppError::NotFound("Destination folder not found".to_string()))?;
 
             if parent.project_id != project_id {
                 return Err(AppError::BadRequest(
-                    "โฟลเดอร์ปลายทางไม่ได้อยู่ในโปรเจกต์นี้".to_string(),
+                    "The destination folder is not in this project".to_string(),
                 ));
             }
             if parent.type_ != NoteType::Folder {
                 return Err(AppError::BadRequest(
-                    "สามารถสร้างโน้ตไว้ภายใต้ folder เท่านั้น".to_string(),
+                    "Notes can only be created under a folder".to_string(),
                 ));
             }
         }
 
-        // folder ไม่มี content เสมอ
+        // A folder never has content
         let content = if payload.type_ == NoteType::Folder {
             None
         } else {
@@ -334,9 +334,9 @@ impl ProjectService {
         Self::ensure_member(conn, project_id, user_id)?;
 
         let note = ProjectRepository::find_note(conn, note_id)
-            .map_err(|_| AppError::NotFound("ไม่พบโน้ตนี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Note not found".to_string()))?;
         if note.project_id != project_id {
-            return Err(AppError::NotFound("ไม่พบโน้ตนี้ในโปรเจกต์".to_string()));
+            return Err(AppError::NotFound("Note not found in the project".to_string()));
         }
 
         let content = if note.type_ == NoteType::Folder {
@@ -359,9 +359,9 @@ impl ProjectService {
         Self::ensure_member(conn, project_id, user_id)?;
 
         let note = ProjectRepository::find_note(conn, note_id)
-            .map_err(|_| AppError::NotFound("ไม่พบโน้ตนี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Note not found".to_string()))?;
         if note.project_id != project_id {
-            return Err(AppError::NotFound("ไม่พบโน้ตนี้ในโปรเจกต์".to_string()));
+            return Err(AppError::NotFound("Note not found in the project".to_string()));
         }
 
         ProjectRepository::delete_note(conn, note_id)?;
@@ -378,7 +378,7 @@ impl ProjectService {
         Self::ensure_member(conn, project_id, user_id)?;
 
         let board = ProjectRepository::find_board_by_project(conn, project_id)
-            .map_err(|_| AppError::NotFound("ไม่พบบอร์ดของโปรเจกต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Board not found for this project".to_string()))?;
         let columns = ProjectRepository::find_columns_by_board(conn, board.id)?;
         let active_sprint = ProjectRepository::find_active_sprint(conn, project_id)?;
 
@@ -428,7 +428,7 @@ impl ProjectService {
         let columns = ProjectRepository::find_columns_by_boards(conn, &board_ids)
             .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
-        // columns ถูกเรียงตาม (board_id, order_index) จาก DB แล้ว -> push ตามลำดับได้เลย
+        // columns are already ordered by (board_id, order_index) from the DB -> push in order directly
         let mut columns_by_board: HashMap<Uuid, Vec<BoardColumnResponse>> = HashMap::new();
         for column in columns {
             columns_by_board
@@ -493,9 +493,9 @@ impl ProjectService {
         Self::ensure_member(conn, project_id, user_id)?;
 
         let sprint = ProjectRepository::find_sprint(conn, sprint_id)
-            .map_err(|_| AppError::NotFound("ไม่พบสปรินต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Sprint not found".to_string()))?;
         if sprint.project_id != project_id {
-            return Err(AppError::NotFound("ไม่พบสปรินต์นี้ในโปรเจกต์".to_string()));
+            return Err(AppError::NotFound("Sprint not found in the project".to_string()));
         }
 
         let tasks = ProjectRepository::find_tasks_by_sprint(conn, sprint_id)
@@ -540,9 +540,9 @@ impl ProjectService {
         Self::ensure_member(conn, project_id, user_id)?;
 
         let sprint = ProjectRepository::find_sprint(conn, sprint_id)
-            .map_err(|_| AppError::NotFound("ไม่พบสปรินต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Sprint not found".to_string()))?;
         if sprint.project_id != project_id {
-            return Err(AppError::NotFound("ไม่พบสปรินต์นี้ในโปรเจกต์".to_string()));
+            return Err(AppError::NotFound("Sprint not found in the project".to_string()));
         }
 
         if payload.is_active == Some(true)
@@ -550,7 +550,7 @@ impl ProjectService {
             && active_sprint.id != sprint_id
         {
             return Err(AppError::BadRequest(
-                "ไม่สามารถเปิดสปรินต์ได้ เพราะมีสปรินต์อื่นกำลังทำงานอยู่".to_string(),
+                "Cannot activate the sprint because another sprint is currently active".to_string(),
             ));
         }
 
@@ -578,9 +578,9 @@ impl ProjectService {
         Self::ensure_owner(conn, project_id, user_id)?;
 
         let sprint = ProjectRepository::find_sprint(conn, sprint_id)
-            .map_err(|_| AppError::NotFound("ไม่พบสปรินต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Sprint not found".to_string()))?;
         if sprint.project_id != project_id {
-            return Err(AppError::NotFound("ไม่พบสปรินต์นี้ในโปรเจกต์".to_string()));
+            return Err(AppError::NotFound("Sprint not found in the project".to_string()));
         }
 
         ProjectRepository::delete_sprint(conn, sprint_id)?;
@@ -596,21 +596,21 @@ impl ProjectService {
     ) -> Result<TaskResponse, AppError> {
         let project = Self::ensure_member(conn, payload.project_id, user_id)?;
         let board = ProjectRepository::find_board_by_project(conn, project.id)
-            .map_err(|_| AppError::NotFound("ไม่พบบอร์ดของโปรเจกต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Board not found for this project".to_string()))?;
 
-        // เลือกคอลัมน์: ถ้าไม่ส่งมา ใช้คอลัมน์แรกสุด
+        // Select column: if not provided, use the first column
         let column_id = match payload.column_id {
             Some(column_id) => {
                 if !ProjectRepository::column_belongs_to_board(conn, column_id, board.id)? {
                     return Err(AppError::BadRequest(
-                        "column_id ไม่ได้อยู่ในบอร์ดของโปรเจกต์นี้".to_string(),
+                        "column_id is not in this project's board".to_string(),
                     ));
                 }
                 column_id
             }
             None => {
                 ProjectRepository::find_first_column(conn, board.id)
-                    .map_err(|_| AppError::NotFound("ไม่พบคอลัมน์ในบอร์ดนี้".to_string()))?
+                    .map_err(|_| AppError::NotFound("No column found in this board".to_string()))?
                     .id
             }
         };
@@ -619,7 +619,7 @@ impl ProjectService {
             && !ProjectRepository::sprint_belongs_to_project(conn, sprint_id, project.id)?
         {
             return Err(AppError::BadRequest(
-                "sprint_id ไม่ได้อยู่ในโปรเจกต์นี้".to_string(),
+                "sprint_id is not in this project".to_string(),
             ));
         }
 
@@ -650,14 +650,14 @@ impl ProjectService {
         user_id: Uuid,
     ) -> Result<TaskResponse, AppError> {
         let task = ProjectRepository::find_task(conn, task_id)
-            .map_err(|_| AppError::NotFound("ไม่พบ Task นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Task not found".to_string()))?;
         Self::ensure_member(conn, task.project_id, user_id)?;
 
         if let Some(column_id) = payload.column_id
             && !ProjectRepository::column_belongs_to_board(conn, column_id, task.board_id)?
         {
             return Err(AppError::BadRequest(
-                "column_id ไม่ได้อยู่ในบอร์ดของ Task นี้".to_string(),
+                "column_id is not in this task's board".to_string(),
             ));
         }
 
@@ -665,7 +665,7 @@ impl ProjectService {
             && !ProjectRepository::sprint_belongs_to_project(conn, sprint_id, task.project_id)?
         {
             return Err(AppError::BadRequest(
-                "sprint_id ไม่ได้อยู่ในโปรเจกต์ของ Task นี้".to_string(),
+                "sprint_id is not in this task's project".to_string(),
             ));
         }
 
@@ -698,7 +698,7 @@ impl ProjectService {
         user_id: Uuid,
     ) -> Result<(), AppError> {
         let task = ProjectRepository::find_task(conn, task_id)
-            .map_err(|_| AppError::NotFound("ไม่พบ Task นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Task not found".to_string()))?;
         Self::ensure_member(conn, task.project_id, user_id)?;
 
         ProjectRepository::delete_task(conn, task_id)?;
@@ -713,7 +713,7 @@ impl ProjectService {
         user_id: Uuid,
     ) -> Result<Vec<CommentResponse>, AppError> {
         let task = ProjectRepository::find_task(conn, task_id)
-            .map_err(|_| AppError::NotFound("ไม่พบ Task นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Task not found".to_string()))?;
         Self::ensure_member(conn, task.project_id, user_id)?;
 
         let comments = ProjectRepository::find_comments_by_task(conn, task_id)
@@ -729,7 +729,7 @@ impl ProjectService {
         user_id: Uuid,
     ) -> Result<CommentResponse, AppError> {
         let task = ProjectRepository::find_task(conn, task_id)
-            .map_err(|_| AppError::NotFound("ไม่พบ Task นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Task not found".to_string()))?;
         Self::ensure_member(conn, task.project_id, user_id)?;
 
         let new_comment = NewTaskComment {
@@ -744,36 +744,36 @@ impl ProjectService {
 
     // ===== Access helpers =====
 
-    /// ผู้ใช้ต้องเป็นสมาชิกของโปรเจกต์ (คืนค่า Project เมื่อผ่าน)
+    /// The user must be a member of the project (returns Project when passed)
     fn ensure_member(
         conn: &mut PgConnection,
         project_id: Uuid,
         user_id: Uuid,
     ) -> Result<Project, AppError> {
         let project = ProjectRepository::find_project(conn, project_id)
-            .map_err(|_| AppError::NotFound("ไม่พบโปรเจกต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Project not found".to_string()))?;
 
         let is_member = ProjectRepository::is_member(conn, project_id, user_id)
             .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
         if !is_member {
-            return Err(AppError::Forbidden("คุณไม่ใช่สมาชิกของโปรเจกต์นี้".to_string()));
+            return Err(AppError::Forbidden("You are not a member of this project".to_string()));
         }
 
         Ok(project)
     }
 
-    /// ผู้ใช้ต้องเป็นเจ้าของโปรเจกต์ (คืนค่า Project เมื่อผ่าน)
+    /// The user must be the owner of the project (returns Project when passed)
     fn ensure_owner(
         conn: &mut PgConnection,
         project_id: Uuid,
         user_id: Uuid,
     ) -> Result<Project, AppError> {
         let project = ProjectRepository::find_project(conn, project_id)
-            .map_err(|_| AppError::NotFound("ไม่พบโปรเจกต์นี้".to_string()))?;
+            .map_err(|_| AppError::NotFound("Project not found".to_string()))?;
 
         if project.owner_id != user_id {
             return Err(AppError::Forbidden(
-                "เฉพาะเจ้าของโปรเจกต์เท่านั้นที่ทำรายการนี้ได้".to_string(),
+                "Only the project owner can perform this action".to_string(),
             ));
         }
 
@@ -915,7 +915,7 @@ fn to_note_response(note: ProjectNote) -> NoteResponse {
     to_note_response_flat(note, Vec::new())
 }
 
-/// ประกอบ Vec<ProjectNote> แบบแบนให้เป็นโครงสร้างต้นไม้ (folder ซ้อน folder)
+/// Assembles a flat Vec<ProjectNote> into a tree structure (folders nested within folders)
 fn build_note_tree(notes: Vec<ProjectNote>) -> Vec<NoteResponse> {
     let mut children_map: HashMap<Option<Uuid>, Vec<ProjectNote>> = HashMap::new();
     for note in notes {

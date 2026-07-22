@@ -25,7 +25,7 @@ use crate::{
     },
 };
 
-/// category ของ Transaction ที่ sync มาจากค่าเดินทาง (ตรงกับ property_options
+/// The Transaction category used when syncing from transportation expenses (matches property_options
 /// property_type: TRANSACTION_EXPENSE_CATEGORY, value: transport)
 const TRANSPORTATION_TRANSACTION_CATEGORY: &str = "transport";
 
@@ -72,14 +72,14 @@ impl TransportationExpenseService {
         })
     }
 
-    /// คำนวณสถิติของค่าใช้จ่ายเดินทางในช่วงเดือน/ปีที่ระบุ (global ต่อผู้ใช้ ไม่ผูกกับ filter
-    /// category/keyword) หน่วยเป็นสตางค์
+    /// Calculates transportation expense statistics for the specified month/year range (global per
+    /// user, independent of the category/keyword filters). Unit is satang
     fn build_transportation_expense_stats(
         expenses: &[TransportationExpense],
     ) -> TransportationExpenseStatsResponse {
         let total_expense: i64 = expenses.iter().map(|expense| expense.amount).sum();
 
-        // category -> (ยอดรวม, จำนวนรายการ)
+        // category -> (total amount, item count)
         let mut category_map: HashMap<String, (i64, i64)> = HashMap::new();
         let mut active_days: HashSet<NaiveDate> = HashSet::new();
 
@@ -120,7 +120,7 @@ impl TransportationExpenseService {
         }
     }
 
-    /// สัดส่วนของ part เทียบกับ total เป็นเปอร์เซ็นต์ ปัดเศษ 2 ตำแหน่ง
+    /// Proportion of part relative to total, in percent, rounded to 2 decimal places
     fn percentage_of(part: i64, total: i64) -> f64 {
         if total == 0 {
             return 0.0;
@@ -215,7 +215,7 @@ impl TransportationExpenseService {
 
         TransportationExpenseRepository::delete_transportation_expense(conn, expense_id)?;
 
-        // ลบ Transaction ที่เคย sync ไว้ด้วย กันรายการค้างเป็น ghost transaction
+        // Also delete the previously synced Transaction to prevent it from being left behind as a ghost transaction
         if let Some(transaction_id) = existing.transaction_id {
             TransactionRepository::delete_transaction(conn, transaction_id)?;
         }
@@ -223,7 +223,7 @@ impl TransportationExpenseService {
         Ok(())
     }
 
-    /// เทียบสถานะ sync เดิมกับที่ส่งมาใหม่ แล้วสร้าง/แก้ไข/ลบ Transaction ที่ผูกไว้ให้ตรงกัน
+    /// Compares the previous sync state with the newly submitted one, then creates/updates/deletes the linked Transaction to match
     #[allow(clippy::too_many_arguments)]
     fn resolve_transaction_link(
         conn: &mut PgConnection,
@@ -296,7 +296,7 @@ impl TransportationExpenseService {
                 .map_err(|_| AppError::NotFound("Transportation expense not found".to_string()))?;
 
         if expense.user_id != user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์เข้าถึงรายการนี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to access this item".to_string()));
         }
 
         Ok(expense)

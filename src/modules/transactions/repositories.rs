@@ -72,8 +72,9 @@ impl TransactionRepository {
         Ok((items, total))
     }
 
-    /// รายการ transaction ทั้งหมดของผู้ใช้ในช่วงเดือน/ปีที่ระบุ (ไม่ผูก filter type/category/keyword
-    /// และไม่แบ่งหน้า) ใช้สำหรับคำนวณ stats — ถ้าไม่ระบุเดือน/ปีจะคืนทุกรายการของผู้ใช้
+    /// All of a user's transactions in the specified month/year range (independent of the
+    /// type/category/keyword filters and not paginated). Used to calculate stats — if month/year
+    /// is not specified, returns all of the user's items
     pub fn find_transactions_for_stats(
         conn: &mut PgConnection,
         user_id: Uuid,
@@ -233,7 +234,7 @@ impl TransactionRepository {
             .execute(conn)
     }
 
-    /// รายการ subscription ที่ยัง active ทั้งหมด (ไม่ผูก filter) ใช้สำหรับคำนวณ stats
+    /// All subscriptions that are still active (independent of the filter), used to calculate stats
     pub fn find_active_subscriptions(
         conn: &mut PgConnection,
         user_id: Uuid,
@@ -245,7 +246,7 @@ impl TransactionRepository {
             .load::<Subscription>(conn)
     }
 
-    /// จำนวน subscription ทั้งหมดของผู้ใช้ (รวมรายการที่ inactive)
+    /// Total number of subscriptions for a user (including inactive items)
     pub fn count_subscriptions(conn: &mut PgConnection, user_id: Uuid) -> QueryResult<i64> {
         subscriptions::table
             .filter(subscriptions::user_id.eq(user_id))

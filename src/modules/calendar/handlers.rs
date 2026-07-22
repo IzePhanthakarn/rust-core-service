@@ -21,7 +21,7 @@ use crate::{
     params(HolidayFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูลวันหยุดสำเร็จ", body = ApiResponse<HolidayListResponse>),
+        (status = 200, description = "Holiday data retrieved successfully", body = ApiResponse<HolidayListResponse>),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -32,7 +32,7 @@ pub async fn get_holidays(
     let mut conn = state.get_conn()?;
     let data = CalendarService::get_holidays(&mut conn, filters.year, filters.month)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูลวันหยุดสำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Holiday data retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -42,8 +42,8 @@ pub async fn get_holidays(
     request_body = FetchHolidayRequest,
     security(("bearerAuth" = [])),
     responses(
-        (status = 201, description = "บันทึกวันหยุดสำเร็จ", body = ApiResponse<FetchHolidayResult>),
-        (status = 400, description = "URL ไม่ถูกต้องหรือรูปแบบข้อมูลผิดพลาด"),
+        (status = 201, description = "Holidays saved successfully", body = ApiResponse<FetchHolidayResult>),
+        (status = 400, description = "Invalid URL or malformed data"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -53,15 +53,15 @@ pub async fn fetch_holidays(
 ) -> Result<(StatusCode, Json<ApiResponse<FetchHolidayResult>>), AppError> {
     let bot_response = reqwest::get(&payload.path)
         .await
-        .map_err(|_| AppError::BadRequest("ไม่สามารถเชื่อมต่อ URL ที่ระบุได้".to_string()))?
+        .map_err(|_| AppError::BadRequest("Unable to connect to the specified URL.".to_string()))?
         .json::<BotHolidayResponse>()
         .await
-        .map_err(|_| AppError::InternalServerError("รูปแบบข้อมูลจาก URL ไม่ถูกต้อง".to_string()))?;
+        .map_err(|_| AppError::InternalServerError("The data format from the URL is invalid.".to_string()))?;
 
     let mut conn = state.get_conn()?;
     let result = CalendarService::save_holidays(&mut conn, bot_response.holiday_calendar_lists)?;
 
-    Ok((StatusCode::CREATED, Json(ApiResponse::success(201, "บันทึกวันหยุดสำเร็จ", result))))
+    Ok((StatusCode::CREATED, Json(ApiResponse::success(201, "Holidays saved successfully", result))))
 }
 
 #[utoipa::path(
@@ -71,9 +71,9 @@ pub async fn fetch_holidays(
     params(("event_id" = Uuid, Path, description = "Event ID")),
     security(("bearerAuth" = [])),
     responses(
-        (status = 204, description = "ลบ event สำเร็จ"),
-        (status = 403, description = "ไม่มีสิทธิ์ลบ"),
-        (status = 404, description = "ไม่พบ event"),
+        (status = 204, description = "Event deleted successfully"),
+        (status = 403, description = "No permission to delete"),
+        (status = 404, description = "Event not found"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -96,10 +96,10 @@ pub async fn delete_event(
     params(("event_id" = Uuid, Path, description = "Event ID")),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "แก้ไข event สำเร็จ", body = ApiResponse<EventResponse>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง"),
-        (status = 403, description = "ไม่มีสิทธิ์แก้ไข"),
-        (status = 404, description = "ไม่พบ event"),
+        (status = 200, description = "Event updated successfully", body = ApiResponse<EventResponse>),
+        (status = 400, description = "Invalid data"),
+        (status = 403, description = "No permission to edit"),
+        (status = 404, description = "Event not found"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -112,7 +112,7 @@ pub async fn update_event(
     let mut conn = state.get_conn()?;
     let result = CalendarService::update_event(&mut conn, event_id, &payload, claims.sub)?;
 
-    Ok(Json(ApiResponse::success(200, "แก้ไข event สำเร็จ", result)))
+    Ok(Json(ApiResponse::success(200, "Event updated successfully", result)))
 }
 
 #[utoipa::path(
@@ -122,8 +122,8 @@ pub async fn update_event(
     params(EventFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "ดึงข้อมูล events สำเร็จ", body = ApiResponse<EventListResponse>),
-        (status = 400, description = "ข้อมูล filter ไม่ถูกต้อง"),
+        (status = 200, description = "Events retrieved successfully", body = ApiResponse<EventListResponse>),
+        (status = 400, description = "Invalid filter data"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -135,7 +135,7 @@ pub async fn get_events(
     let mut conn = state.get_conn()?;
     let data = CalendarService::get_events(&mut conn, claims.sub, filters)?;
 
-    Ok(Json(ApiResponse::success(200, "ดึงข้อมูล events สำเร็จ", data)))
+    Ok(Json(ApiResponse::success(200, "Events retrieved successfully", data)))
 }
 
 #[utoipa::path(
@@ -145,8 +145,8 @@ pub async fn get_events(
     request_body = CreateEventRequest,
     security(("bearerAuth" = [])),
     responses(
-        (status = 201, description = "สร้าง event สำเร็จ", body = ApiResponse<Vec<EventResponse>>),
-        (status = 400, description = "ข้อมูลไม่ถูกต้อง"),
+        (status = 201, description = "Event created successfully", body = ApiResponse<Vec<EventResponse>>),
+        (status = 400, description = "Invalid data"),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -158,5 +158,5 @@ pub async fn create_events(
     let mut conn = state.get_conn()?;
     let result = CalendarService::create_events(&mut conn, &payload, claims.sub)?;
 
-    Ok((StatusCode::CREATED, Json(ApiResponse::success(201, "สร้าง event สำเร็จ", result))))
+    Ok((StatusCode::CREATED, Json(ApiResponse::success(201, "Event created successfully", result))))
 }

@@ -57,11 +57,11 @@ INSERT INTO property_options (property_type_id, sort_order, label, value, is_act
 ('155deadd-e1b4-4296-bf5c-0b4e27728438', 3, '⏳ Standard', '3', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
 ('155deadd-e1b4-4296-bf5c-0b4e27728438', 4, '⚡ Good Flow', '4', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
 ('155deadd-e1b4-4296-bf5c-0b4e27728438', 5, '🧠 Peak Performance', '5', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
--- Value: 1 | Label: " 🐢Low Productivity" (หรือ "Struggling")
--- Value: 2 | Label: "🧩 Below Average" (หรือ "Distracted")
--- Value: 3 | Label: "⏳ Standard" (หรือ "Steady")
--- Value: 4 | Label: "⚡ Good Flow" (หรือ "Productive")
--- Value: 5 | Label: "🧠 Peak Performance" (หรือ "Deep Work")
+-- Value: 1 | Label: " 🐢Low Productivity" (or "Struggling")
+-- Value: 2 | Label: "🧩 Below Average" (or "Distracted")
+-- Value: 3 | Label: "⏳ Standard" (or "Steady")
+-- Value: 4 | Label: "⚡ Good Flow" (or "Productive")
+-- Value: 5 | Label: "🧠 Peak Performance" (or "Deep Work")
 
 -- Insert Mood Score Property Types
 INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES 
@@ -74,11 +74,11 @@ INSERT INTO property_options (property_type_id, sort_order, label, value, is_act
 ('c89b46ba-f696-4822-9593-7da3e7cc94e0', 3, '😐 Neutral', '3', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
 ('c89b46ba-f696-4822-9593-7da3e7cc94e0', 4, '☀️ Positive', '4', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3'),
 ('c89b46ba-f696-4822-9593-7da3e7cc94e0', 5, '🎉 Excellent', '5', true, 'c8adb331-dcf6-47ad-ad15-066a145127b3');
--- 1: 🌪️ Challenging (วันที่รู้สึกเหนื่อยล้า หรือมีปัญหาเข้ามามาก)
--- 2: ☁️ Subpar (วันที่อารมณ์ไม่ค่อยดี หรือไม่ค่อยมีแรงบันดาลใจ)
--- 3: 😐 Neutral (วันที่ปกติ ทั่วไป)
--- 4: ☀️ Positive (วันที่รู้สึกดี มีพลังงาน)
--- 5: 🎉 Excellent (วันที่รู้สึกถึงความสำเร็จ และมีความสุขมาก)
+-- 1: 🌪️ Challenging (a day you feel exhausted or run into a lot of problems)
+-- 2: ☁️ Subpar (a day you're not in a great mood or lack motivation)
+-- 3: 😐 Neutral (a normal, ordinary day)
+-- 4: ☀️ Positive (a day you feel good and energetic)
+-- 5: 🎉 Excellent (a day you feel accomplished and very happy)
 
 -- Insert Month Property Types
 INSERT INTO property_types (id, name, code, description, created_by, updated_by) VALUES 

@@ -19,7 +19,7 @@ serde_json = "1.0"
 
 # Auth & Security
 jsonwebtoken = "9.3"
-argon2 = "0.5" # สำหรับ Hash รหัสผ่าน
+argon2 = "0.5" # For hashing passwords
 
 # Utils & Types
 uuid = { version = "1.8", features = ["v4", "serde"] }
@@ -39,7 +39,7 @@ log = "0.4.32"
 reqwest = { version = "0.12", features = ["json"] }
 
 [profile.release]
-opt-level = 3     # [สำคัญสุด] เปลี่ยนกลับเป็น 3 เพื่อรีด Performance ความเร็วสูงสุด
-strip = true      # ตัด Debug symbols ทิ้ง (ลดขนาดไฟล์มหาศาล โดยไม่กระทบความเร็ว)
-lto = true        # Link-Time Optimization (ลดขนาดไฟล์ + ทำให้โค้ดทำงาน "เร็วขึ้น" ด้วย)
-codegen-units = 1 # ยอมให้ Build ช้าลง เพื่อให้ Compiler เห็นโค้ดทั้งหมดและ Optimize ได้ดีที่สุด
+opt-level = 3     # [Most important] Set back to 3 to squeeze out maximum performance
+strip = true      # Strip debug symbols (drastically reduces file size without affecting speed)
+lto = true        # Link-Time Optimization (reduces file size and makes the code run "faster")
+codegen-units = 1 # Allow the build to be slower so the compiler can see all the code and optimize best

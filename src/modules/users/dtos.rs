@@ -3,7 +3,7 @@ use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::modules::users::models::{UserRole, UserStatus}; // ดึง Enum มาจาก models
+use crate::modules::users::models::{UserRole, UserStatus}; // Import enums from models
 
 #[derive(Serialize, ToSchema)]
 pub struct MeResponse {
@@ -16,10 +16,10 @@ pub struct MeResponse {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateProfileRequest {
-    #[validate(length(min = 1, message = "กรุณากรอกชื่อจริง"))]
+    #[validate(length(min = 1, message = "Please enter your first name"))]
     pub first_name: String,
 
-    #[validate(length(min = 1, message = "กรุณากรอกนามสกุล"))]
+    #[validate(length(min = 1, message = "Please enter your last name"))]
     pub last_name: String,
 }
 

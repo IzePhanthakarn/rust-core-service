@@ -31,7 +31,7 @@ impl CalendarService {
         for item in &items {
             let holiday_date = item.parse_date().ok_or_else(|| {
                 AppError::BadRequest(format!(
-                    "ไม่สามารถแปลงวันที่ได้: {} {} {}",
+                    "Unable to parse date: {} {} {}",
                     item.date, item.month, item.year
                 ))
             })?;
@@ -49,12 +49,12 @@ impl CalendarService {
         let inserted_count = conn.transaction::<i64, AppError, _>(|conn| {
             for year in &years {
                 HolidayRepository::delete_by_year(conn, year).map_err(|_| {
-                    AppError::InternalServerError("ไม่สามารถลบข้อมูลเก่าได้".to_string())
+                    AppError::InternalServerError("Unable to delete old data".to_string())
                 })?;
             }
 
             let inserted = HolidayRepository::insert_batch(conn, new_holidays).map_err(|_| {
-                AppError::InternalServerError("ไม่สามารถบันทึกข้อมูลวันหยุดได้".to_string())
+                AppError::InternalServerError("Unable to save holiday data".to_string())
             })?;
 
             Ok(inserted.len() as i64)
@@ -75,16 +75,16 @@ impl CalendarService {
             .as_deref()
             .map(|m| m.parse::<u32>())
             .transpose()
-            .map_err(|_| AppError::BadRequest("month ต้องเป็นตัวเลข 1-12".to_string()))?;
+            .map_err(|_| AppError::BadRequest("month must be a number between 1 and 12".to_string()))?;
 
         if let Some(m) = target_month {
             if !(1..=12).contains(&m) {
-                return Err(AppError::BadRequest("month ต้องอยู่ระหว่าง 1-12".to_string()));
+                return Err(AppError::BadRequest("month must be between 1 and 12".to_string()));
             }
         }
 
         let holidays = HolidayRepository::find_all_by_year(conn, &target_year)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูลวันหยุดได้".to_string()))?;
+            .map_err(|_| AppError::InternalServerError("Unable to retrieve holiday data".to_string()))?;
 
         let stat_month = target_month.unwrap_or_else(|| now.month());
         let total_holidays_this_year = holidays.len() as i64;
@@ -135,18 +135,18 @@ impl CalendarService {
         claims_user_id: Uuid,
     ) -> Result<EventResponse, AppError> {
         if payload.user_id != claims_user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข event นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to edit this event.".to_string()));
         }
 
         if payload.end_date <= payload.start_date {
-            return Err(AppError::BadRequest("end_date ต้องมาหลัง start_date".to_string()));
+            return Err(AppError::BadRequest("end_date must be after start_date".to_string()));
         }
 
         let existing = EventRepository::find_by_id(conn, event_id)
-            .map_err(|_| AppError::NotFound("ไม่พบ event ที่ต้องการแก้ไข".to_string()))?;
+            .map_err(|_| AppError::NotFound("The event to edit was not found.".to_string()))?;
 
         if existing.user_id != claims_user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์แก้ไข event นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to edit this event.".to_string()));
         }
 
         let changes = UpdateEvent {
@@ -159,7 +159,7 @@ impl CalendarService {
         };
 
         let updated = EventRepository::update(conn, event_id, changes)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถแก้ไข event ได้".to_string()))?;
+            .map_err(|_| AppError::InternalServerError("Unable to update the event.".to_string()))?;
 
         Ok(event_to_response(updated))
     }
@@ -170,14 +170,14 @@ impl CalendarService {
         claims_user_id: Uuid,
     ) -> Result<(), AppError> {
         let existing = EventRepository::find_by_id(conn, event_id)
-            .map_err(|_| AppError::NotFound("ไม่พบ event ที่ต้องการลบ".to_string()))?;
+            .map_err(|_| AppError::NotFound("The event to delete was not found.".to_string()))?;
 
         if existing.user_id != claims_user_id {
-            return Err(AppError::Forbidden("คุณไม่มีสิทธิ์ลบ event นี้".to_string()));
+            return Err(AppError::Forbidden("You do not have permission to delete this event.".to_string()));
         }
 
         EventRepository::delete_by_id(conn, event_id)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถลบ event ได้".to_string()))?;
+            .map_err(|_| AppError::InternalServerError("Unable to delete the event.".to_string()))?;
 
         Ok(())
     }
@@ -192,23 +192,23 @@ impl CalendarService {
             .as_deref()
             .map(|y| y.parse::<i32>())
             .transpose()
-            .map_err(|_| AppError::BadRequest("year ต้องเป็นตัวเลข".to_string()))?;
+            .map_err(|_| AppError::BadRequest("year must be a number".to_string()))?;
 
         let month = filters
             .month
             .as_deref()
             .map(|m| m.parse::<u32>())
             .transpose()
-            .map_err(|_| AppError::BadRequest("month ต้องเป็นตัวเลข 1-12".to_string()))?;
+            .map_err(|_| AppError::BadRequest("month must be a number between 1 and 12".to_string()))?;
 
         if let Some(m) = month {
             if !(1..=12).contains(&m) {
-                return Err(AppError::BadRequest("month ต้องอยู่ระหว่าง 1-12".to_string()));
+                return Err(AppError::BadRequest("month must be between 1 and 12".to_string()));
             }
         }
 
         let events = EventRepository::find_all_by_user(conn, user_id, year, month, filters.tag)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถดึงข้อมูล event ได้".to_string()))?;
+            .map_err(|_| AppError::InternalServerError("Unable to retrieve event data.".to_string()))?;
 
         let total_events = events.len() as i64;
         let items = events.into_iter().map(event_to_response).collect();
@@ -222,13 +222,13 @@ impl CalendarService {
         user_id: Uuid,
     ) -> Result<Vec<EventResponse>, AppError> {
         if payload.end_date <= payload.start_date {
-            return Err(AppError::BadRequest("end_date ต้องมาหลัง start_date".to_string()));
+            return Err(AppError::BadRequest("end_date must be after start_date".to_string()));
         }
 
         let new_events = split_into_daily_events(user_id, payload);
 
         let created = EventRepository::insert_batch(conn, new_events)
-            .map_err(|_| AppError::InternalServerError("ไม่สามารถบันทึก event ได้".to_string()))?;
+            .map_err(|_| AppError::InternalServerError("Unable to save the event.".to_string()))?;
 
         Ok(created.into_iter().map(event_to_response).collect())
     }

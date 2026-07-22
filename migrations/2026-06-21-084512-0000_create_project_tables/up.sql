@@ -22,7 +22,7 @@ CREATE TABLE projects (
 CREATE INDEX idx_projects_owner_id ON projects(owner_id);
 CREATE INDEX idx_projects_status ON projects(status);
 
--- 2. Table: project_members (สมาชิกในโปรเจกต์)
+-- 2. Table: project_members (members within a project)
 CREATE TABLE project_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -34,7 +34,7 @@ CREATE TABLE project_members (
 CREATE INDEX idx_project_members_project_id ON project_members(project_id);
 CREATE INDEX idx_project_members_user_id ON project_members(user_id);
 
--- 3. Table: project_notes (โน้ตแบบ Obsidian รองรับ Folder ซ้อน Folder)
+-- 3. Table: project_notes (Obsidian-style notes, supports nested folders)
 CREATE TABLE project_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -60,7 +60,7 @@ CREATE TABLE boards (
 
 CREATE INDEX idx_boards_project_id ON boards(project_id);
 
--- 5. Table: board_columns (Stage บน Kanban)
+-- 5. Table: board_columns (stages on the Kanban board)
 CREATE TABLE board_columns (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     board_id UUID NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
@@ -83,7 +83,7 @@ CREATE TABLE sprints (
 
 CREATE INDEX idx_sprints_project_id ON sprints(project_id);
 
--- 7. Table: tasks (การ์ดงานบน Kanban และ Backlogs)
+-- 7. Table: tasks (task cards on the Kanban board and backlogs)
 CREATE TABLE tasks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

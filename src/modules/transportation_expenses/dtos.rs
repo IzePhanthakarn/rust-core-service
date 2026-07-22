@@ -50,15 +50,15 @@ pub struct TransportationExpenseFilterQuery {
 pub struct CreateTransportationExpenseRequest {
     #[validate(custom(function = "validate_category"))]
     pub category: String,
-    /// จำนวนเงินหน่วยสตางค์ (100.50 บาท = 10050)
-    #[validate(range(min = 1, message = "จำนวนเงินต้องมากกว่า 0"))]
+    /// Amount in satang (100.50 baht = 10050)
+    #[validate(range(min = 1, message = "Amount must be greater than 0"))]
     pub amount: i64,
     #[validate(custom(function = "validate_title"))]
     pub title: String,
     #[validate(custom(function = "validate_note"))]
     pub note: Option<String>,
     pub expense_date: DateTime<Utc>,
-    /// ติ๊กเพื่อบันทึกรายการนี้ลง Transaction (รายจ่าย) ควบคู่ไปด้วย
+    /// Check to also save this item as a Transaction (expense)
     #[serde(default)]
     pub sync_to_transaction: bool,
 }
@@ -67,16 +67,16 @@ pub struct CreateTransportationExpenseRequest {
 pub struct UpdateTransportationExpenseRequest {
     #[validate(custom(function = "validate_category"))]
     pub category: String,
-    /// จำนวนเงินหน่วยสตางค์ (100.50 บาท = 10050)
-    #[validate(range(min = 1, message = "จำนวนเงินต้องมากกว่า 0"))]
+    /// Amount in satang (100.50 baht = 10050)
+    #[validate(range(min = 1, message = "Amount must be greater than 0"))]
     pub amount: i64,
     #[validate(custom(function = "validate_title"))]
     pub title: String,
     #[validate(custom(function = "validate_note"))]
     pub note: Option<String>,
     pub expense_date: DateTime<Utc>,
-    /// ติ๊กเพื่อบันทึกรายการนี้ลง Transaction (รายจ่าย) ควบคู่ไปด้วย
-    /// ถ้าเดิมเคย sync ไว้แล้วปรับเป็น false ระบบจะลบ Transaction ที่ผูกไว้ให้อัตโนมัติ
+    /// Check to also save this item as a Transaction (expense)
+    /// If it was previously synced and this is set to false, the system will automatically delete the linked Transaction
     #[serde(default)]
     pub sync_to_transaction: bool,
 }
@@ -87,7 +87,7 @@ pub struct UpdateTransportationExpenseRequest {
 pub struct TransportationExpenseResponse {
     pub id: Uuid,
     pub user_id: Uuid,
-    /// Transaction ที่ถูกสร้างคู่กันไว้ (ถ้าติ๊ก sync_to_transaction ตอนบันทึก)
+    /// The Transaction created alongside this item (if sync_to_transaction was checked when saving)
     pub transaction_id: Option<Uuid>,
     pub category: String,
     pub amount: i64,
@@ -98,8 +98,8 @@ pub struct TransportationExpenseResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-/// รายการค่าใช้จ่ายเดินทางแบบแบ่งหน้า พร้อมสถิติสรุป
-/// (stats คำนวณจากช่วงเดือน/ปีที่ระบุ ไม่ผูกกับ filter category/keyword และไม่ผูกกับ pagination)
+/// Paginated list of transportation expenses with summary statistics
+/// (stats are calculated from the specified month/year range, independent of the category/keyword filters and pagination)
 #[derive(Serialize, ToSchema)]
 pub struct TransportationExpenseListResponse {
     pub items: Vec<TransportationExpenseResponse>,
@@ -109,25 +109,25 @@ pub struct TransportationExpenseListResponse {
     pub stats: TransportationExpenseStatsResponse,
 }
 
-/// สรุปสถิติของค่าใช้จ่ายเดินทาง (หน่วยเป็นสตางค์)
+/// Summary statistics for transportation expenses (in satang)
 #[derive(Serialize, ToSchema)]
 pub struct TransportationExpenseStatsResponse {
-    /// ค่าใช้จ่ายรวม
+    /// Total expense
     pub total_expense: i64,
-    /// ค่าใช้จ่ายเฉลี่ยต่อวันที่มีการใช้จ่ายจริง (ค่าใช้จ่ายรวม / จำนวนวันที่มีรายการ)
+    /// Average expense per day with actual spending (total expense / number of days with items)
     pub average_per_active_day: i64,
-    /// จำนวนรายการทั้งหมดในช่วงที่คำนวณ (ไม่ใช่แค่หน้าปัจจุบัน)
+    /// Total number of items in the calculated range (not just the current page)
     pub expense_count: i64,
-    /// สัดส่วนค่าใช้จ่ายของแต่ละหมวด (type) เรียงจากมากไปน้อย รวมกันได้ 100%
+    /// Proportion of expense for each category (type), sorted from highest to lowest, summing to 100%
     pub category_split: Vec<TransportationExpenseCategoryStat>,
 }
 
-/// สัดส่วนค่าใช้จ่ายของแต่ละหมวด (type)
+/// Proportion of expense for each category (type)
 #[derive(Serialize, ToSchema)]
 pub struct TransportationExpenseCategoryStat {
     pub category: String,
     pub total_amount: i64,
     pub count: i64,
-    /// สัดส่วนเทียบกับค่าใช้จ่ายรวม หน่วยเปอร์เซ็นต์ (0-100)
+    /// Proportion relative to total expense, in percent (0-100)
     pub percentage: f64,
 }

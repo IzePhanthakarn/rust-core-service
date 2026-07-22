@@ -1,7 +1,7 @@
--- เปิดใช้งาน Extension สำหรับสร้าง UUID
+-- Enable extension for generating UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- สร้าง Custom Types (Enums)
+-- Create custom types (enums)
 CREATE TYPE user_status AS ENUM ('active', 'suspended', 'banned', 'inactive');
 CREATE TYPE user_provider AS ENUM ('google', 'facebook', 'discord', 'line');
 CREATE TYPE user_role AS ENUM ('super_admin', 'admin', 'user');
@@ -20,7 +20,7 @@ CREATE TABLE users (
     deleted_at TIMESTAMP
 );
 
--- 2. Table: user_profiles (1-to-1 กับ users)
+-- 2. Table: user_profiles (1-to-1 with users)
 CREATE TABLE user_profiles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -32,7 +32,7 @@ CREATE TABLE user_profiles (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Table: social_accounts (1-to-Many กับ users)
+-- 3. Table: social_accounts (1-to-Many with users)
 CREATE TABLE social_accounts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
