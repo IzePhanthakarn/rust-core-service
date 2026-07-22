@@ -75,6 +75,10 @@ async fn main() {
         .nest(
             "/subscriptions",
             modules::transactions::routes::subscription_routes(),
+        )
+        .nest(
+            "/transportation-expenses",
+            modules::transportation_expenses::routes::transportation_expense_routes(),
         );
 
     let app = Router::new()

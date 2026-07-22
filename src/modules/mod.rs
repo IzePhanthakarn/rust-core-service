@@ -5,5 +5,6 @@ pub mod projects;
 pub mod properties;
 pub mod todos;
 pub mod transactions;
+pub mod transportation_expenses;
 pub mod users;
 pub mod work_logs;

@@ -335,6 +335,26 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::{Bool, Int4, Int8, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
 
+    transportation_expenses (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        transaction_id -> Nullable<Uuid>,
+        #[max_length = 50]
+        category -> Varchar,
+        amount -> Int8,
+        #[max_length = 100]
+        title -> Varchar,
+        #[max_length = 3000]
+        note -> Nullable<Varchar>,
+        expense_date -> Timestamptz,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::{Bool, Int4, Int8, Nullable, Text, Timestamp, Timestamptz, Uuid, Varchar};
+
     user_profiles (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -420,6 +440,8 @@ diesel::joinable!(tasks -> sprints (sprint_id));
 diesel::joinable!(todo_items -> todo_lists (list_id));
 diesel::joinable!(todo_lists -> users (user_id));
 diesel::joinable!(transactions -> users (user_id));
+diesel::joinable!(transportation_expenses -> transactions (transaction_id));
+diesel::joinable!(transportation_expenses -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
 diesel::joinable!(work_log_tags -> work_logs (log_id));
 diesel::joinable!(work_logs -> users (user_id));
@@ -442,6 +464,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     todo_items,
     todo_lists,
     transactions,
+    transportation_expenses,
     user_profiles,
     users,
     work_log_tags,

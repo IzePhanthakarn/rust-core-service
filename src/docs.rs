@@ -104,7 +104,13 @@ use utoipa::{Modify, OpenApi};
         modules::transactions::handlers::create_subscription,
         modules::transactions::handlers::update_subscription,
         modules::transactions::handlers::toggle_subscription,
-        modules::transactions::handlers::delete_subscription
+        modules::transactions::handlers::delete_subscription,
+
+        // Transportation Expense Routes
+        modules::transportation_expenses::handlers::get_all_transportation_expenses,
+        modules::transportation_expenses::handlers::create_transportation_expense,
+        modules::transportation_expenses::handlers::update_transportation_expense,
+        modules::transportation_expenses::handlers::delete_transportation_expense
     ),
     components(schemas(
         // ==== Common Response Schemas ===
@@ -276,6 +282,16 @@ use utoipa::{Modify, OpenApi};
         core::response::ApiResponse<modules::transactions::dtos::SubscriptionListResponse>,
         core::response::ApiResponse<modules::transactions::dtos::SubscriptionResponse>,
         // ================================
+
+        // ==== Transportation Expenses ====
+        modules::transportation_expenses::dtos::CreateTransportationExpenseRequest,
+        modules::transportation_expenses::dtos::UpdateTransportationExpenseRequest,
+        modules::transportation_expenses::dtos::TransportationExpenseResponse,
+
+        core::response::PaginatedData<modules::transportation_expenses::dtos::TransportationExpenseResponse>,
+        core::response::ApiResponse<core::response::PaginatedData<modules::transportation_expenses::dtos::TransportationExpenseResponse>>,
+        core::response::ApiResponse<modules::transportation_expenses::dtos::TransportationExpenseResponse>,
+        // ================================
     )),
     tags(
         (name = "System Health", description = "Endpoints for monitoring server status"),
@@ -288,7 +304,8 @@ use utoipa::{Modify, OpenApi};
         (name = "Projects", description = "Project, Notes, Kanban, Sprint & Member Management"),
         (name = "Tasks", description = "Task (Kanban Card / Backlog) and Comment Management"),
         (name = "Transactions", description = "Income & Expense Transaction Management"),
-        (name = "Subscriptions", description = "Recurring Monthly/Yearly Expense Management")
+        (name = "Subscriptions", description = "Recurring Monthly/Yearly Expense Management"),
+        (name = "Transportation Expenses", description = "Travel Expense History Management (Fuel, Electric Train, Public Transport)")
     ),
     servers(
         (url = "/v1", description = "Core API v1")
