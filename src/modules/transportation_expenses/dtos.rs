@@ -97,3 +97,37 @@ pub struct TransportationExpenseResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// รายการค่าใช้จ่ายเดินทางแบบแบ่งหน้า พร้อมสถิติสรุป
+/// (stats คำนวณจากช่วงเดือน/ปีที่ระบุ ไม่ผูกกับ filter category/keyword และไม่ผูกกับ pagination)
+#[derive(Serialize, ToSchema)]
+pub struct TransportationExpenseListResponse {
+    pub items: Vec<TransportationExpenseResponse>,
+    pub total_items: i64,
+    pub total_pages: i64,
+    pub current_page: i64,
+    pub stats: TransportationExpenseStatsResponse,
+}
+
+/// สรุปสถิติของค่าใช้จ่ายเดินทาง (หน่วยเป็นสตางค์)
+#[derive(Serialize, ToSchema)]
+pub struct TransportationExpenseStatsResponse {
+    /// ค่าใช้จ่ายรวม
+    pub total_expense: i64,
+    /// ค่าใช้จ่ายเฉลี่ยต่อวันที่มีการใช้จ่ายจริง (ค่าใช้จ่ายรวม / จำนวนวันที่มีรายการ)
+    pub average_per_active_day: i64,
+    /// จำนวนรายการทั้งหมดในช่วงที่คำนวณ (ไม่ใช่แค่หน้าปัจจุบัน)
+    pub expense_count: i64,
+    /// สัดส่วนค่าใช้จ่ายของแต่ละหมวด (type) เรียงจากมากไปน้อย รวมกันได้ 100%
+    pub category_split: Vec<TransportationExpenseCategoryStat>,
+}
+
+/// สัดส่วนค่าใช้จ่ายของแต่ละหมวด (type)
+#[derive(Serialize, ToSchema)]
+pub struct TransportationExpenseCategoryStat {
+    pub category: String,
+    pub total_amount: i64,
+    pub count: i64,
+    /// สัดส่วนเทียบกับค่าใช้จ่ายรวม หน่วยเปอร์เซ็นต์ (0-100)
+    pub percentage: f64,
+}

@@ -14,16 +14,23 @@ use crate::{
             CreateSubscriptionRequest, CreateTransactionRequest, SubscriptionCategoryStat,
             SubscriptionCycleSplit, SubscriptionFilterQuery, SubscriptionListResponse,
             SubscriptionMonthlyStat, SubscriptionResponse, SubscriptionStatsResponse,
-            SubscriptionTopExpense, TransactionFilterQuery, TransactionResponse,
+            SubscriptionTopExpense, TransactionCategoryStat, TransactionFilterQuery,
+            TransactionListResponse, TransactionResponse, TransactionStatsResponse,
             UpdateSubscriptionRequest, UpdateTransactionRequest,
         },
-        models::{BillingCycle, NewSubscription, NewTransaction, Subscription, Transaction},
+        models::{
+            BillingCycle, NewSubscription, NewTransaction, Subscription, Transaction,
+            TransactionType,
+        },
         repositories::TransactionRepository,
     },
 };
 
 /// จำนวนรายการค่าใช้จ่ายสูงสุดที่ส่งกลับ
 const TOP_EXPENSES_LIMIT: usize = 4;
+
+/// จำนวนหมวดหมู่รายจ่ายสูงสุดที่ส่งกลับใน stats ของ transaction
+const TOP_EXPENSE_CATEGORIES_LIMIT: usize = 5;
 
 pub struct TransactionService;
 
@@ -32,7 +39,7 @@ impl TransactionService {
         conn: &mut PgConnection,
         user_id: Uuid,
         filters: TransactionFilterQuery,
-    ) -> Result<PaginatedData<TransactionResponse>, AppError> {
+    ) -> Result<TransactionListResponse, AppError> {
         let (page, limit) = normalize_page_limit(filters.page, filters.limit);
 
         let (transactions, total_items) =
@@ -44,7 +51,106 @@ impl TransactionService {
             .map(TransactionRepository::to_transaction_response)
             .collect();
 
-        Ok(PaginatedData::new(items, total_items, page, limit))
+        let stats_transactions = TransactionRepository::find_transactions_for_stats(
+            conn,
+            user_id,
+            filters.month.as_deref(),
+            filters.year.as_deref(),
+        )
+        .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
+
+        let stats = Self::build_transaction_stats(
+            &stats_transactions,
+            filters.month.as_deref(),
+            filters.year.as_deref(),
+        );
+
+        let pagination = PaginatedData::new(items, total_items, page, limit);
+
+        Ok(TransactionListResponse {
+            items: pagination.items,
+            total_items: pagination.total_items,
+            total_pages: pagination.total_pages,
+            current_page: pagination.current_page,
+            stats,
+        })
+    }
+
+    /// คำนวณสถิติของ transaction ในช่วงเดือน/ปีที่ระบุ (global ต่อผู้ใช้ ไม่ผูกกับ filter
+    /// type/category/keyword) หน่วยเป็นสตางค์
+    fn build_transaction_stats(
+        transactions: &[Transaction],
+        month: Option<&str>,
+        year: Option<&str>,
+    ) -> TransactionStatsResponse {
+        let mut total_income: i64 = 0;
+        let mut total_expense: i64 = 0;
+        // category -> (ยอดรวม, จำนวนรายการ)
+        let mut category_map: HashMap<String, (i64, i64)> = HashMap::new();
+
+        for transaction in transactions {
+            match transaction.type_ {
+                TransactionType::Income => total_income += transaction.amount,
+                TransactionType::Expense => {
+                    total_expense += transaction.amount;
+
+                    let entry = category_map
+                        .entry(transaction.category.clone())
+                        .or_insert((0, 0));
+                    entry.0 += transaction.amount;
+                    entry.1 += 1;
+                }
+            }
+        }
+
+        let mut top_expense_category: Vec<TransactionCategoryStat> = category_map
+            .into_iter()
+            .map(|(category, (total_amount, count))| TransactionCategoryStat {
+                category,
+                total_amount,
+                count,
+            })
+            .collect();
+        top_expense_category.sort_by_key(|stat| std::cmp::Reverse(stat.total_amount));
+        top_expense_category.truncate(TOP_EXPENSE_CATEGORIES_LIMIT);
+
+        let days_in_range = Self::days_in_range(transactions, month, year);
+        let average_daily_expense = if days_in_range > 0 {
+            total_expense / days_in_range
+        } else {
+            0
+        };
+
+        TransactionStatsResponse {
+            total_income,
+            total_expense,
+            top_expense_category,
+            average_daily_expense,
+            transaction_count: transactions.len() as i64,
+        }
+    }
+
+    /// จำนวนวันของช่วงที่ใช้คำนวณค่าเฉลี่ยต่อวัน
+    /// - ถ้าระบุเดือน/ปี ใช้จำนวนวันจริงของเดือนนั้น
+    /// - ถ้าไม่ระบุ ใช้จำนวนวันระหว่างรายการแรกสุดถึงล่าสุดของผลลัพธ์ (อย่างน้อย 1 วัน)
+    fn days_in_range(transactions: &[Transaction], month: Option<&str>, year: Option<&str>) -> i64 {
+        if let (Some(month), Some(year)) = (
+            month.and_then(|m| m.parse::<u32>().ok()),
+            year.and_then(|y| y.parse::<i32>().ok()),
+        ) && (1..=12).contains(&month)
+        {
+            return last_day_of_month(year, month) as i64;
+        }
+
+        let dates: Vec<NaiveDate> = transactions
+            .iter()
+            .map(|transaction| transaction.transaction_date.date_naive())
+            .collect();
+
+        match (dates.iter().min(), dates.iter().max()) {
+            (Some(min_date), Some(max_date)) => (*max_date - *min_date).num_days() + 1,
+            _ => 1,
+        }
     }
 
     pub fn find_one_transaction(

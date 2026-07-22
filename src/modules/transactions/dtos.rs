@@ -159,6 +159,40 @@ pub struct TransactionResponse {
     pub updated_at: DateTime<Utc>,
 }
 
+/// รายการ transaction แบบแบ่งหน้า พร้อมสถิติสรุป
+/// (stats คำนวณจากช่วงเดือน/ปีที่ระบุ ไม่ผูกกับ filter type/category/keyword และไม่ผูกกับ pagination)
+#[derive(Serialize, ToSchema)]
+pub struct TransactionListResponse {
+    pub items: Vec<TransactionResponse>,
+    pub total_items: i64,
+    pub total_pages: i64,
+    pub current_page: i64,
+    pub stats: TransactionStatsResponse,
+}
+
+/// สรุปสถิติของ transaction (หน่วยเป็นสตางค์)
+#[derive(Serialize, ToSchema)]
+pub struct TransactionStatsResponse {
+    /// รายรับรวม
+    pub total_income: i64,
+    /// รายจ่ายรวม
+    pub total_expense: i64,
+    /// หมวดหมู่รายจ่ายสูงสุด เรียงจากมากไปน้อย
+    pub top_expense_category: Vec<TransactionCategoryStat>,
+    /// ค่าใช้จ่ายเฉลี่ยต่อวัน (รายจ่ายรวม / จำนวนวันในช่วง)
+    pub average_daily_expense: i64,
+    /// จำนวนรายการทั้งหมดในช่วงที่คำนวณ (ไม่ใช่แค่หน้าปัจจุบัน)
+    pub transaction_count: i64,
+}
+
+/// ยอดรายจ่ายรวมของแต่ละหมวด
+#[derive(Serialize, ToSchema)]
+pub struct TransactionCategoryStat {
+    pub category: String,
+    pub total_amount: i64,
+    pub count: i64,
+}
+
 #[derive(Serialize, ToSchema)]
 pub struct SubscriptionResponse {
     pub id: Uuid,

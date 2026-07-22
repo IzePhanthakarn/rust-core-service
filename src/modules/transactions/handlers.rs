@@ -7,17 +7,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    core::{
-        errors::AppError,
-        extractors::ValidatedJson,
-        jwt::Claims,
-        response::{ApiResponse, PaginatedData},
-    },
+    core::{errors::AppError, extractors::ValidatedJson, jwt::Claims, response::ApiResponse},
     modules::transactions::{
         dtos::{
             CreateSubscriptionRequest, CreateTransactionRequest, SubscriptionFilterQuery,
             SubscriptionListResponse, SubscriptionResponse, TransactionFilterQuery,
-            TransactionResponse, UpdateSubscriptionRequest, UpdateTransactionRequest,
+            TransactionListResponse, TransactionResponse, UpdateSubscriptionRequest,
+            UpdateTransactionRequest,
         },
         services::TransactionService,
     },
@@ -30,7 +26,7 @@ use crate::{
     params(TransactionFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "Transactions found successfully", body = ApiResponse<PaginatedData<TransactionResponse>>),
+        (status = 200, description = "Transactions found successfully", body = ApiResponse<TransactionListResponse>),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -38,7 +34,7 @@ pub async fn get_all_transactions(
     State(state): State<AppState>,
     Query(filters): Query<TransactionFilterQuery>,
     Extension(claims): Extension<Claims>,
-) -> Result<Json<ApiResponse<PaginatedData<TransactionResponse>>>, AppError> {
+) -> Result<Json<ApiResponse<TransactionListResponse>>, AppError> {
     let mut conn = state.get_conn()?;
     let data = TransactionService::get_all_transactions(&mut conn, claims.sub, filters)?;
 

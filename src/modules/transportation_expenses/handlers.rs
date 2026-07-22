@@ -7,16 +7,12 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    core::{
-        errors::AppError,
-        extractors::ValidatedJson,
-        jwt::Claims,
-        response::{ApiResponse, PaginatedData},
-    },
+    core::{errors::AppError, extractors::ValidatedJson, jwt::Claims, response::ApiResponse},
     modules::transportation_expenses::{
         dtos::{
             CreateTransportationExpenseRequest, TransportationExpenseFilterQuery,
-            TransportationExpenseResponse, UpdateTransportationExpenseRequest,
+            TransportationExpenseListResponse, TransportationExpenseResponse,
+            UpdateTransportationExpenseRequest,
         },
         services::TransportationExpenseService,
     },
@@ -29,7 +25,7 @@ use crate::{
     params(TransportationExpenseFilterQuery),
     security(("bearerAuth" = [])),
     responses(
-        (status = 200, description = "Transportation expenses found successfully", body = ApiResponse<PaginatedData<TransportationExpenseResponse>>),
+        (status = 200, description = "Transportation expenses found successfully", body = ApiResponse<TransportationExpenseListResponse>),
         (status = 500, description = "Internal server error")
     )
 )]
@@ -37,7 +33,7 @@ pub async fn get_all_transportation_expenses(
     State(state): State<AppState>,
     Query(filters): Query<TransportationExpenseFilterQuery>,
     Extension(claims): Extension<Claims>,
-) -> Result<Json<ApiResponse<PaginatedData<TransportationExpenseResponse>>>, AppError> {
+) -> Result<Json<ApiResponse<TransportationExpenseListResponse>>, AppError> {
     let mut conn = state.get_conn()?;
     let data = TransportationExpenseService::get_all_transportation_expenses(
         &mut conn, claims.sub, filters,

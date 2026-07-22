@@ -67,6 +67,29 @@ impl TransportationExpenseRepository {
         Ok((items, total))
     }
 
+    /// รายการค่าใช้จ่ายเดินทางทั้งหมดของผู้ใช้ในช่วงเดือน/ปีที่ระบุ (ไม่ผูก filter category/keyword
+    /// และไม่แบ่งหน้า) ใช้สำหรับคำนวณ stats — ถ้าไม่ระบุเดือน/ปีจะคืนทุกรายการของผู้ใช้
+    pub fn find_transportation_expenses_for_stats(
+        conn: &mut PgConnection,
+        user_id: Uuid,
+        month: Option<&str>,
+        year: Option<&str>,
+    ) -> QueryResult<Vec<TransportationExpense>> {
+        let mut query = transportation_expenses::table
+            .filter(transportation_expenses::user_id.eq(user_id))
+            .into_boxed();
+
+        if let Some((start_date, end_date)) = Self::month_year_range(month, year) {
+            query = query
+                .filter(transportation_expenses::expense_date.ge(start_date))
+                .filter(transportation_expenses::expense_date.lt(end_date));
+        }
+
+        query
+            .select(TransportationExpense::as_select())
+            .load::<TransportationExpense>(conn)
+    }
+
     pub fn find_one_transportation_expense(
         conn: &mut PgConnection,
         expense_id: Uuid,

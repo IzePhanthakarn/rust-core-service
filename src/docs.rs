@@ -266,6 +266,9 @@ use utoipa::{Modify, OpenApi};
         modules::transactions::dtos::CreateTransactionRequest,
         modules::transactions::dtos::UpdateTransactionRequest,
         modules::transactions::dtos::TransactionResponse,
+        modules::transactions::dtos::TransactionListResponse,
+        modules::transactions::dtos::TransactionStatsResponse,
+        modules::transactions::dtos::TransactionCategoryStat,
         modules::transactions::dtos::CreateSubscriptionRequest,
         modules::transactions::dtos::UpdateSubscriptionRequest,
         modules::transactions::dtos::SubscriptionResponse,
@@ -276,8 +279,7 @@ use utoipa::{Modify, OpenApi};
         modules::transactions::dtos::SubscriptionCycleSplit,
         modules::transactions::dtos::SubscriptionTopExpense,
 
-        core::response::PaginatedData<modules::transactions::dtos::TransactionResponse>,
-        core::response::ApiResponse<core::response::PaginatedData<modules::transactions::dtos::TransactionResponse>>,
+        core::response::ApiResponse<modules::transactions::dtos::TransactionListResponse>,
         core::response::ApiResponse<modules::transactions::dtos::TransactionResponse>,
         core::response::ApiResponse<modules::transactions::dtos::SubscriptionListResponse>,
         core::response::ApiResponse<modules::transactions::dtos::SubscriptionResponse>,
@@ -287,9 +289,11 @@ use utoipa::{Modify, OpenApi};
         modules::transportation_expenses::dtos::CreateTransportationExpenseRequest,
         modules::transportation_expenses::dtos::UpdateTransportationExpenseRequest,
         modules::transportation_expenses::dtos::TransportationExpenseResponse,
+        modules::transportation_expenses::dtos::TransportationExpenseListResponse,
+        modules::transportation_expenses::dtos::TransportationExpenseStatsResponse,
+        modules::transportation_expenses::dtos::TransportationExpenseCategoryStat,
 
-        core::response::PaginatedData<modules::transportation_expenses::dtos::TransportationExpenseResponse>,
-        core::response::ApiResponse<core::response::PaginatedData<modules::transportation_expenses::dtos::TransportationExpenseResponse>>,
+        core::response::ApiResponse<modules::transportation_expenses::dtos::TransportationExpenseListResponse>,
         core::response::ApiResponse<modules::transportation_expenses::dtos::TransportationExpenseResponse>,
         // ================================
     )),

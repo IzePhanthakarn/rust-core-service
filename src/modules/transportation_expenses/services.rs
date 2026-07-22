@@ -1,4 +1,6 @@
-use chrono::{DateTime, Utc};
+use std::collections::{HashMap, HashSet};
+
+use chrono::{DateTime, NaiveDate, Utc};
 use diesel::PgConnection;
 use uuid::Uuid;
 
@@ -13,8 +15,10 @@ use crate::{
     },
     modules::transportation_expenses::{
         dtos::{
-            CreateTransportationExpenseRequest, TransportationExpenseFilterQuery,
-            TransportationExpenseResponse, UpdateTransportationExpenseRequest,
+            CreateTransportationExpenseRequest, TransportationExpenseCategoryStat,
+            TransportationExpenseFilterQuery, TransportationExpenseListResponse,
+            TransportationExpenseResponse, TransportationExpenseStatsResponse,
+            UpdateTransportationExpenseRequest,
         },
         models::{NewTransportationExpense, TransportationExpense},
         repositories::TransportationExpenseRepository,
@@ -32,7 +36,7 @@ impl TransportationExpenseService {
         conn: &mut PgConnection,
         user_id: Uuid,
         filters: TransportationExpenseFilterQuery,
-    ) -> Result<PaginatedData<TransportationExpenseResponse>, AppError> {
+    ) -> Result<TransportationExpenseListResponse, AppError> {
         let (page, limit) = normalize_page_limit(filters.page, filters.limit);
 
         let (expenses, total_items) =
@@ -46,7 +50,87 @@ impl TransportationExpenseService {
             .map(TransportationExpenseRepository::to_transportation_expense_response)
             .collect();
 
-        Ok(PaginatedData::new(items, total_items, page, limit))
+        let stats_expenses =
+            TransportationExpenseRepository::find_transportation_expenses_for_stats(
+                conn,
+                user_id,
+                filters.month.as_deref(),
+                filters.year.as_deref(),
+            )
+            .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
+
+        let stats = Self::build_transportation_expense_stats(&stats_expenses);
+
+        let pagination = PaginatedData::new(items, total_items, page, limit);
+
+        Ok(TransportationExpenseListResponse {
+            items: pagination.items,
+            total_items: pagination.total_items,
+            total_pages: pagination.total_pages,
+            current_page: pagination.current_page,
+            stats,
+        })
+    }
+
+    /// คำนวณสถิติของค่าใช้จ่ายเดินทางในช่วงเดือน/ปีที่ระบุ (global ต่อผู้ใช้ ไม่ผูกกับ filter
+    /// category/keyword) หน่วยเป็นสตางค์
+    fn build_transportation_expense_stats(
+        expenses: &[TransportationExpense],
+    ) -> TransportationExpenseStatsResponse {
+        let total_expense: i64 = expenses.iter().map(|expense| expense.amount).sum();
+
+        // category -> (ยอดรวม, จำนวนรายการ)
+        let mut category_map: HashMap<String, (i64, i64)> = HashMap::new();
+        let mut active_days: HashSet<NaiveDate> = HashSet::new();
+
+        for expense in expenses {
+            active_days.insert(expense.expense_date.date_naive());
+
+            let entry = category_map
+                .entry(expense.category.clone())
+                .or_insert((0, 0));
+            entry.0 += expense.amount;
+            entry.1 += 1;
+        }
+
+        let mut category_split: Vec<TransportationExpenseCategoryStat> = category_map
+            .into_iter()
+            .map(
+                |(category, (total_amount, count))| TransportationExpenseCategoryStat {
+                    category,
+                    total_amount,
+                    count,
+                    percentage: Self::percentage_of(total_amount, total_expense),
+                },
+            )
+            .collect();
+        category_split.sort_by_key(|stat| std::cmp::Reverse(stat.total_amount));
+
+        let average_per_active_day = if active_days.is_empty() {
+            0
+        } else {
+            total_expense / active_days.len() as i64
+        };
+
+        TransportationExpenseStatsResponse {
+            total_expense,
+            average_per_active_day,
+            expense_count: expenses.len() as i64,
+            category_split,
+        }
+    }
+
+    /// สัดส่วนของ part เทียบกับ total เป็นเปอร์เซ็นต์ ปัดเศษ 2 ตำแหน่ง
+    fn percentage_of(part: i64, total: i64) -> f64 {
+        if total == 0 {
+            return 0.0;
+        }
+
+        Self::round_to_two_decimal_places(part as f64 / total as f64 * 100.0)
+    }
+
+    fn round_to_two_decimal_places(value: f64) -> f64 {
+        (value * 100.0).round() / 100.0
     }
 
     pub fn create_transportation_expense(

@@ -72,6 +72,29 @@ impl TransactionRepository {
         Ok((items, total))
     }
 
+    /// รายการ transaction ทั้งหมดของผู้ใช้ในช่วงเดือน/ปีที่ระบุ (ไม่ผูก filter type/category/keyword
+    /// และไม่แบ่งหน้า) ใช้สำหรับคำนวณ stats — ถ้าไม่ระบุเดือน/ปีจะคืนทุกรายการของผู้ใช้
+    pub fn find_transactions_for_stats(
+        conn: &mut PgConnection,
+        user_id: Uuid,
+        month: Option<&str>,
+        year: Option<&str>,
+    ) -> QueryResult<Vec<Transaction>> {
+        let mut query = transactions::table
+            .filter(transactions::user_id.eq(user_id))
+            .into_boxed();
+
+        if let Some((start_date, end_date)) = Self::month_year_range(month, year) {
+            query = query
+                .filter(transactions::transaction_date.ge(start_date))
+                .filter(transactions::transaction_date.lt(end_date));
+        }
+
+        query
+            .select(Transaction::as_select())
+            .load::<Transaction>(conn)
+    }
+
     pub fn find_one_transaction(
         conn: &mut PgConnection,
         transaction_id: Uuid,
