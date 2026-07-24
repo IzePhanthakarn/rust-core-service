@@ -23,8 +23,7 @@ pub struct PaginatedData<T> {
 
 impl<T> PaginatedData<T> {
     pub fn new(items: Vec<T>, total_items: i64, page: i64, limit: i64) -> Self {
-        let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
-        Self { items, total_items, total_pages, current_page: page }
+        Self { items, total_items, total_pages: total_pages(total_items, limit), current_page: page }
     }
 }
 
@@ -32,6 +31,10 @@ pub fn normalize_page_limit(page: Option<i64>, limit: Option<i64>) -> (i64, i64)
     let page = page.unwrap_or(1).max(1);
     let limit = limit.unwrap_or(10).clamp(1, 100);
     (page, limit)
+}
+
+pub fn total_pages(total_items: i64, limit: i64) -> i64 {
+    (total_items as f64 / limit as f64).ceil() as i64
 }
 
 impl<T> ApiResponse<T> {

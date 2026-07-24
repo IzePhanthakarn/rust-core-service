@@ -1,9 +1,9 @@
-use chrono::{DateTime, TimeZone, Utc};
 use diesel::prelude::*;
 use diesel::{PgConnection, QueryResult, SelectableHelper};
 use uuid::Uuid;
 
 use crate::{
+    core::query_utils::{month_year_range, normalize_filter},
     modules::transportation_expenses::{
         dtos::{TransportationExpenseFilterQuery, TransportationExpenseResponse},
         models::{NewTransportationExpense, TransportationExpense},
@@ -45,7 +45,7 @@ impl TransportationExpenseRepository {
         }
 
         if let Some((start_date, end_date)) =
-            Self::month_year_range(filters.month.as_deref(), filters.year.as_deref())
+            month_year_range(filters.month.as_deref(), filters.year.as_deref())
         {
             data_query = data_query
                 .filter(transportation_expenses::expense_date.ge(start_date))
@@ -80,7 +80,7 @@ impl TransportationExpenseRepository {
             .filter(transportation_expenses::user_id.eq(user_id))
             .into_boxed();
 
-        if let Some((start_date, end_date)) = Self::month_year_range(month, year) {
+        if let Some((start_date, end_date)) = month_year_range(month, year) {
             query = query
                 .filter(transportation_expenses::expense_date.ge(start_date))
                 .filter(transportation_expenses::expense_date.lt(end_date));
@@ -157,33 +157,4 @@ impl TransportationExpenseRepository {
             updated_at: expense.updated_at,
         }
     }
-
-    fn month_year_range(
-        month: Option<&str>,
-        year: Option<&str>,
-    ) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
-        let month = month?.parse::<u32>().ok()?;
-        let year = year?.parse::<i32>().ok()?;
-
-        if !(1..=12).contains(&month) {
-            return None;
-        }
-
-        let (next_year, next_month) = if month == 12 {
-            (year + 1, 1)
-        } else {
-            (year, month + 1)
-        };
-
-        let start_date = Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0).single()?;
-        let end_date = Utc
-            .with_ymd_and_hms(next_year, next_month, 1, 0, 0, 0)
-            .single()?;
-
-        Some((start_date, end_date))
-    }
-}
-
-fn normalize_filter(value: Option<&str>) -> Option<&str> {
-    value.map(str::trim).filter(|text| !text.is_empty())
 }

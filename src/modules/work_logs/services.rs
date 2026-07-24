@@ -4,7 +4,7 @@ use diesel::Connection;
 use diesel::PgConnection;
 use uuid::Uuid;
 
-use crate::core::response::normalize_page_limit;
+use crate::core::response::{normalize_page_limit, total_pages};
 use crate::modules::work_logs::dtos::UpdateWorkLogRequest;
 use crate::modules::work_logs::dtos::WorkLogFilterQuery;
 use crate::modules::work_logs::dtos::WorkLogListResponse;
@@ -39,12 +39,10 @@ impl WorkLogService {
             )
             .map_err(|_| AppError::InternalServerError("Query Error".to_string()))?;
 
-        let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
-
         Ok(WorkLogListResponse {
             items,
             total_items,
-            total_pages,
+            total_pages: total_pages(total_items, limit),
             current_page: page,
             all_work_logs,
             monthly_mood_score: Self::round_to_two_decimal_places(monthly_mood_score),

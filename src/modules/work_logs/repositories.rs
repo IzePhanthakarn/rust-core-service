@@ -1,4 +1,5 @@
 use crate::{
+    core::query_utils::month_year_range,
     modules::work_logs::{
         dtos::WorkLogResponse,
         models::{NewWorkLog, NewWorkLogTag, WorkLog, WorkLogTag},
@@ -46,9 +47,7 @@ impl WorkLogRepository {
             stats_query = stats_query.filter(work_logs::title.ilike(search_pattern));
         }
 
-        if let Some((start_date, end_date)) =
-            Self::month_year_range(month.as_deref(), year.as_deref())
-        {
+        if let Some((start_date, end_date)) = month_year_range(month.as_deref(), year.as_deref()) {
             data_query = data_query
                 .filter(work_logs::date_logged.ge(start_date))
                 .filter(work_logs::date_logged.lt(end_date));
@@ -204,30 +203,5 @@ impl WorkLogRepository {
         let end_date = start_date + chrono::Duration::days(1);
 
         (start_date, end_date)
-    }
-
-    fn month_year_range(
-        month: Option<&str>,
-        year: Option<&str>,
-    ) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
-        let month = month?.parse::<u32>().ok()?;
-        let year = year?.parse::<i32>().ok()?;
-
-        if !(1..=12).contains(&month) {
-            return None;
-        }
-
-        let (next_year, next_month) = if month == 12 {
-            (year + 1, 1)
-        } else {
-            (year, month + 1)
-        };
-
-        let start_date = Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0).single()?;
-        let end_date = Utc
-            .with_ymd_and_hms(next_year, next_month, 1, 0, 0, 0)
-            .single()?;
-
-        Some((start_date, end_date))
     }
 }
